@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "932259613195",
+    "project_id": "saas-5116b",
+    "storage_bucket": "saas-5116b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932259613195:android:f40e837e9b79127979d50e",
+        "android_client_info": {
+          "package_name": "com.qrcafe.customer_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9V6zVS3NT6QpAcro6id436YGix2i8eY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932259613195:android:20b6287dd6be29af79d50e",
+        "android_client_info": {
+          "package_name": "com.qrcafe.restaurant_owner_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9V6zVS3NT6QpAcro6id436YGix2i8eY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
