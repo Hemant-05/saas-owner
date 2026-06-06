@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/inventory_models.dart';
@@ -26,7 +27,7 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
 
   String _selectedUnit = 'kg';
   bool _isCustomUnit = false;
-  File? _imageFile;
+  XFile? _imageFile;
   bool _isLoading = false;
 
   bool get _isEdit => widget.item != null;
@@ -81,7 +82,7 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
       imageQuality: 80,
     );
     if (picked != null) {
-      setState(() => _imageFile = File(picked.path));
+      setState(() => _imageFile = picked);
     }
   }
 
@@ -272,7 +273,7 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: AppRadius.borderLarge,
-                    child: Image.file(_imageFile!, fit: BoxFit.cover),
+                    child: kIsWeb ? Image.network(_imageFile!.path, fit: BoxFit.cover) : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
                   ),
                   Positioned(
                     top: AppSpacing.sm,

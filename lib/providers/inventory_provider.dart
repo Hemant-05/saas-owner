@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/inventory_models.dart';
@@ -145,7 +146,7 @@ class InventoryProvider with ChangeNotifier {
     required double currentStock,
     required double lowStockThreshold,
     double? costPerUnit,
-    File? imageFile,
+    XFile? imageFile,
   }) async {
     try {
       final token = await _getToken();
@@ -162,8 +163,12 @@ class InventoryProvider with ChangeNotifier {
       }
 
       if (imageFile != null) {
-        request.files
-            .add(await http.MultipartFile.fromPath('image', imageFile.path));
+        final bytes = await imageFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'image',
+          bytes,
+          filename: imageFile.name,
+        ));
       }
 
       final streamedResponse =
@@ -192,7 +197,7 @@ class InventoryProvider with ChangeNotifier {
     String? unit,
     double? lowStockThreshold,
     double? costPerUnit,
-    File? imageFile,
+    XFile? imageFile,
   }) async {
     try {
       final token = await _getToken();
@@ -210,8 +215,12 @@ class InventoryProvider with ChangeNotifier {
       }
 
       if (imageFile != null) {
-        request.files
-            .add(await http.MultipartFile.fromPath('image', imageFile.path));
+        final bytes = await imageFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'image',
+          bytes,
+          filename: imageFile.name,
+        ));
       }
 
       final streamedResponse =
