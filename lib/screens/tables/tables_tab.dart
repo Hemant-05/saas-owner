@@ -24,6 +24,7 @@ class _TablesTabState extends State<TablesTab> {
   // Add table form controllers
   final _tableNumberCtrl = TextEditingController();
   final _tableNameCtrl = TextEditingController();
+  final _capacityCtrl = TextEditingController(text: '4');
   final _addFormKey = GlobalKey<FormState>();
   bool _isAddingTable = false;
 
@@ -33,6 +34,7 @@ class _TablesTabState extends State<TablesTab> {
   void dispose() {
     _tableNumberCtrl.dispose();
     _tableNameCtrl.dispose();
+    _capacityCtrl.dispose();
     super.dispose();
   }
 
@@ -47,6 +49,7 @@ class _TablesTabState extends State<TablesTab> {
     if (_isDesktop) {
       _tableNumberCtrl.clear();
       _tableNameCtrl.clear();
+      _capacityCtrl.text = '4';
       setState(() {
         _selectedTable = null;
         _panelMode = _TablePanelMode.addNew;
@@ -64,8 +67,9 @@ class _TablesTabState extends State<TablesTab> {
     final tableName = _tableNameCtrl.text.trim().isNotEmpty
         ? _tableNameCtrl.text.trim()
         : 'Table $tableNumber';
+    final capacity = int.parse(_capacityCtrl.text.trim());
 
-    final result = await context.read<TableProvider>().addTable(tableNumber, tableName);
+    final result = await context.read<TableProvider>().addTable(tableNumber, tableName, capacity);
     setState(() => _isAddingTable = false);
 
     if (result != null) {
@@ -96,6 +100,7 @@ class _TablesTabState extends State<TablesTab> {
   void _showAddTableDialog(BuildContext context) {
     final tableNumberCtrl = TextEditingController();
     final tableNameCtrl = TextEditingController();
+    final capacityCtrl = TextEditingController(text: '4');
     final formKey = GlobalKey<FormState>();
     bool isLoading = false;
 
@@ -130,6 +135,20 @@ class _TablesTabState extends State<TablesTab> {
                   style: AppTextStyles.bodyM,
                   decoration: _inputDecor('Table Name (e.g., Window Seat)'),
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                TextFormField(
+                  controller: capacityCtrl,
+                  keyboardType: TextInputType.number,
+                  style: AppTextStyles.bodyM,
+                  decoration: _inputDecor('Capacity (e.g., 4)'),
+                  validator: (v) {
+                    if (v!.isEmpty) return 'Required';
+                    if (int.tryParse(v) == null || int.parse(v) < 1) {
+                      return 'Must be at least 1';
+                    }
+                    return null;
+                  },
+                ),
               ],
             ),
           ),
@@ -148,9 +167,10 @@ class _TablesTabState extends State<TablesTab> {
                 final name = tableNameCtrl.text.trim().isNotEmpty
                     ? tableNameCtrl.text.trim()
                     : 'Table $number';
+                final capacity = int.parse(capacityCtrl.text.trim());
                 final result = await context
                     .read<TableProvider>()
-                    .addTable(number, name);
+                    .addTable(number, name, capacity);
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (result == null && context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -481,6 +501,22 @@ class _TablesTabState extends State<TablesTab> {
               controller: _tableNameCtrl,
               style: AppTextStyles.bodyM,
               decoration: _inputDecor('e.g., Window Seat'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text('Capacity', style: AppTextStyles.labelS.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: AppSpacing.xs),
+            TextFormField(
+              controller: _capacityCtrl,
+              keyboardType: TextInputType.number,
+              style: AppTextStyles.bodyM,
+              decoration: _inputDecor('e.g., 4'),
+              validator: (v) {
+                if (v!.isEmpty) return 'Required';
+                if (int.tryParse(v) == null || int.parse(v) < 1) {
+                  return 'Must be at least 1';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: AppSpacing.xl),
             SizedBox(

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_widgets.dart';
+import '../home_screen.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationHistoryScreen extends StatefulWidget {
@@ -49,10 +50,23 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: isDesktop
+            ? null
+            : Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+                  onPressed: () => HomeScreen.openDrawer(),
+                ),
+              ),
+        automaticallyImplyLeading: !isDesktop,
+        title: const Text('Notifications', style: AppTextStyles.headingM),
         actions: [
           if (_notifications.isNotEmpty)
             TextButton(

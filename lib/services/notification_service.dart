@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 
 // ─── Background message handler (must be a top-level function) ────────────────
@@ -109,6 +110,11 @@ class NotificationService {
   /// Must be called from main() after Firebase.initializeApp().
   Future<void> initialize() async {
     try {
+      if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+        debugPrint('[NotificationService] FCM not supported on Windows/Linux. Skipping init.');
+        return;
+      }
+
       // Register background handler BEFORE any other FCM calls
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -149,7 +155,7 @@ class NotificationService {
         '[NotificationService] Permission: ${settings.authorizationStatus}');
 
     // Android 13+ — local notifications also need permission
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
@@ -293,6 +299,10 @@ class NotificationService {
   /// Call this every time the app starts and the owner is logged in.
   Future<void> registerTokenForRestaurant(String authToken) async {
     try {
+      if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+        debugPrint('[NotificationService] Skipping token registration on Windows/Linux.');
+        return;
+      }
       final fcmToken = await FirebaseMessaging.instance.getToken(
   vapidKey: '0wqglRYLdebz4nDLL99Gh5QbkK0hHv-Wyk6X0a_hmtY',
 );
@@ -310,7 +320,7 @@ class NotificationService {
         },
         body: jsonEncode({
           'fcmToken': fcmToken,
-          'platform': Platform.isIOS ? 'ios' : 'android',
+          'platform': kIsWeb ? 'web' : (Platform.isIOS ? 'ios' : 'android'),
         }),
       );
 

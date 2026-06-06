@@ -91,63 +91,59 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
   }
 
   Widget _buildDesktopKanban(BuildContext context, OrderProvider op) {
-    // 3 columns side-by-side, horizontally scrollable so they don't squish
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: 900,
-          maxWidth: MediaQuery.of(context).size.width,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-        Expanded(
-          child: _KanbanColumn(
-            title: 'New',
-            color: AppColors.statusPlaced,
-            icon: Icons.fiber_new_rounded,
-            orders: op.newOrders,
-            nextStatus: 'preparing',
-            nextLabel: 'Start Preparing',
-            nextIcon: Icons.local_fire_department_rounded,
-            orderProvider: op,
-            onTap: (o) => setState(() => _selectedOrder = o),
-            isSelectedId: _selectedOrder?.id,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 350,
+            child: _KanbanColumn(
+              title: 'New',
+              color: AppColors.statusPlaced,
+              icon: Icons.fiber_new_rounded,
+              orders: op.newOrders,
+              nextStatus: 'preparing',
+              nextLabel: 'Start Preparing',
+              nextIcon: Icons.local_fire_department_rounded,
+              orderProvider: op,
+              onTap: (o) => setState(() => _selectedOrder = o),
+              isSelectedId: _selectedOrder?.id,
+            ),
           ),
-        ),
-        Container(width: 0.5, color: AppColors.border),
-        Expanded(
-          child: _KanbanColumn(
-            title: 'Preparing',
-            color: AppColors.statusPreparing,
-            icon: Icons.local_fire_department_rounded,
-            orders: op.preparingOrders,
-            nextStatus: 'ready',
-            nextLabel: 'Mark Ready',
-            nextIcon: Icons.check_circle_outline_rounded,
-            orderProvider: op,
-            onTap: (o) => setState(() => _selectedOrder = o),
-            isSelectedId: _selectedOrder?.id,
+          Container(width: 0.5, color: AppColors.border),
+          SizedBox(
+            width: 350,
+            child: _KanbanColumn(
+              title: 'Preparing',
+              color: AppColors.statusPreparing,
+              icon: Icons.local_fire_department_rounded,
+              orders: op.preparingOrders,
+              nextStatus: 'ready',
+              nextLabel: 'Mark Ready',
+              nextIcon: Icons.check_circle_outline_rounded,
+              orderProvider: op,
+              onTap: (o) => setState(() => _selectedOrder = o),
+              isSelectedId: _selectedOrder?.id,
+            ),
           ),
-        ),
-        Container(width: 0.5, color: AppColors.border),
-        Expanded(
-          child: _KanbanColumn(
-            title: 'Ready',
-            color: AppColors.statusReady,
-            icon: Icons.check_circle_rounded,
-            orders: op.readyOrders,
-            nextStatus: 'delivered',
-            nextLabel: 'Mark Delivered',
-            nextIcon: Icons.delivery_dining_rounded,
-            orderProvider: op,
-            onTap: (o) => setState(() => _selectedOrder = o),
-            isSelectedId: _selectedOrder?.id,
+          Container(width: 0.5, color: AppColors.border),
+          SizedBox(
+            width: 350,
+            child: _KanbanColumn(
+              title: 'Ready',
+              color: AppColors.statusReady,
+              icon: Icons.check_circle_rounded,
+              orders: op.readyOrders,
+              nextStatus: 'delivered',
+              nextLabel: 'Mark Delivered',
+              nextIcon: Icons.delivery_dining_rounded,
+              orderProvider: op,
+              onTap: (o) => setState(() => _selectedOrder = o),
+              isSelectedId: _selectedOrder?.id,
+            ),
           ),
-        ),
-      ],
-    ),
+        ],
       ),
     );
   }

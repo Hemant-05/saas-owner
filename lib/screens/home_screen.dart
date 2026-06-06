@@ -5,6 +5,7 @@ import '../providers/order_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/table_provider.dart';
 import '../providers/inventory_provider.dart';
+import '../services/offline_sync_service.dart';
 import '../theme/app_theme.dart';
 import 'orders/orders_tab.dart';
 import 'menu/menu_tab.dart';
@@ -18,18 +19,19 @@ import 'notifications/notification_history_screen.dart';
 
 /// Navigation destinations
 const _kNavItems = [
-  (icon: Icons.dashboard_rounded,       label: 'Dashboard'),
-  (icon: Icons.receipt_long_rounded,    label: 'Orders'),
+  (icon: Icons.dashboard_rounded, label: 'Dashboard'),
+  (icon: Icons.receipt_long_rounded, label: 'Orders'),
   (icon: Icons.restaurant_menu_rounded, label: 'Menu'),
-  (icon: Icons.table_bar_rounded,       label: 'Tables'),
-  (icon: Icons.inventory_2_rounded,     label: 'Inventory'),
-  (icon: Icons.notifications_rounded,   label: 'Notifications'),
+  (icon: Icons.table_bar_rounded, label: 'Tables'),
+  (icon: Icons.inventory_2_rounded, label: 'Inventory'),
+  (icon: Icons.notifications_rounded, label: 'Notifications'),
 ];
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  static final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  static final GlobalKey<ScaffoldState> scaffoldKey =
+      GlobalKey<ScaffoldState>();
 
   static void openDrawer() {
     scaffoldKey.currentState?.openDrawer();
@@ -97,8 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Logout',
-            style:
-                TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
         content: const Text('Are you sure you want to logout?',
             style: TextStyle(color: Colors.white70)),
         actions: [
@@ -111,8 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF4757)),
-            child:
-                const Text('Logout', style: TextStyle(color: Colors.white)),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -134,9 +134,16 @@ class _HomeScreenState extends State<HomeScreen> {
       key: HomeScreen.scaffoldKey,
       backgroundColor: AppColors.background,
       drawer: _buildDrawer(context),
-      body: isDesktop
-          ? _buildDesktopLayout(context)
-          : _buildMobileLayout(context),
+      body: Column(
+        children: [
+          const _OfflineSyncBanner(),
+          Expanded(
+            child: isDesktop
+                ? _buildDesktopLayout(context)
+                : _buildMobileLayout(context),
+          ),
+        ],
+      ),
     );
   }
 
@@ -189,8 +196,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const Divider(color: AppColors.border),
               // Profile row
               ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: 4),
                 leading: CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.accent.withValues(alpha: 0.2),
@@ -200,7 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: restaurant?.logoUrl == null
                       ? Text(
                           (restaurant?.name ?? 'R').substring(0, 1),
-                          style: AppTextStyles.labelM.copyWith(color: AppColors.accent),
+                          style: AppTextStyles.labelM
+                              .copyWith(color: AppColors.accent),
                         )
                       : null,
                 ),
@@ -211,8 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 trailing: Builder(
                   builder: (ctx) => IconButton(
-                    icon:
-                        const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
+                    icon: const Icon(Icons.more_vert,
+                        color: AppColors.textSecondary, size: 18),
                     onPressed: () => _showProfileMenu(ctx),
                   ),
                 ),
@@ -239,8 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final offset = box.localToGlobal(Offset.zero);
     showMenu(
       context: ctx,
-      position: RelativeRect.fromLTRB(
-          offset.dx, offset.dy, offset.dx + box.size.width, offset.dy + box.size.height),
+      position: RelativeRect.fromLTRB(offset.dx, offset.dy,
+          offset.dx + box.size.width, offset.dy + box.size.height),
       color: const Color(0xFF1A1A2E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
@@ -260,8 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(Icons.logout_rounded, color: Color(0xFFFF4757), size: 16),
               SizedBox(width: 8),
-              Text('Logout',
-                  style: TextStyle(color: Color(0xFFFF4757))),
+              Text('Logout', style: TextStyle(color: Color(0xFFFF4757))),
             ],
           ),
         ),
@@ -291,13 +298,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _sideNavItem(int index, IconData icon, String label) {
     final isActive = _currentIndex == index;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
       child: InkWell(
         onTap: () => setState(() => _currentIndex = index),
         borderRadius: AppRadius.borderMedium,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: isActive
                 ? AppColors.accent.withValues(alpha: 0.12)
@@ -345,21 +354,21 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: AppSpacing.xl),
             // Brand + restaurant
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor:
-                        AppColors.accent.withValues(alpha: 0.15),
+                    backgroundColor: AppColors.accent.withValues(alpha: 0.15),
                     backgroundImage: restaurant?.logoUrl != null
                         ? NetworkImage(restaurant!.logoUrl!)
                         : null,
                     child: restaurant?.logoUrl == null
                         ? Text(
                             (restaurant?.name ?? 'R').substring(0, 1),
-                            style: AppTextStyles.headingM.copyWith(color: AppColors.accent),
+                            style: AppTextStyles.headingM
+                                .copyWith(color: AppColors.accent),
                           )
                         : null,
                   ),
@@ -375,7 +384,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Text(
                           restaurant?.email ?? '',
-                          style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.bodyS
+                              .copyWith(color: AppColors.textMuted),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
@@ -395,9 +405,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const Divider(color: AppColors.border),
             // Profile
             ListTile(
-              leading: const Icon(Icons.person_rounded, color: AppColors.textSecondary, size: 20),
-              title: const Text('Profile',
-                  style: AppTextStyles.labelM),
+              leading: const Icon(Icons.person_rounded,
+                  color: AppColors.textSecondary, size: 20),
+              title: const Text('Profile', style: AppTextStyles.labelM),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -444,6 +454,78 @@ class _HomeScreenState extends State<HomeScreen> {
           : Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMedium),
       onTap: () => _navigate(index),
+    );
+  }
+}
+
+class _OfflineSyncBanner extends StatelessWidget {
+  const _OfflineSyncBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<OfflineSyncState>(
+      valueListenable: OfflineSyncService.notifier,
+      builder: (context, state, _) {
+        final shouldShow =
+            !state.isOnline || state.isSyncing || state.pendingActions > 0;
+        if (!shouldShow) return const SizedBox.shrink();
+
+        final color = !state.isOnline
+            ? AppColors.warning
+            : state.isSyncing
+                ? AppColors.info
+                : AppColors.success;
+        final icon = !state.isOnline
+            ? Icons.cloud_off_rounded
+            : state.isSyncing
+                ? Icons.sync_rounded
+                : Icons.cloud_done_rounded;
+        final message = !state.isOnline
+            ? state.pendingActions > 0
+                ? '${state.pendingActions} saved change${state.pendingActions == 1 ? '' : 's'} will sync automatically'
+                : 'Showing saved data'
+            : state.isSyncing
+                ? 'Syncing saved changes'
+                : '${state.pendingActions} change${state.pendingActions == 1 ? '' : 's'} waiting to sync';
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: double.infinity,
+          color: color.withValues(alpha: 0.12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTextStyles.labelS.copyWith(color: color),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (state.pendingActions > 0 && !state.isSyncing)
+                TextButton(
+                  onPressed: OfflineSyncService.flushQueuedRequests,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    minimumSize: Size.zero,
+                  ),
+                  child: Text(
+                    'Sync',
+                    style: AppTextStyles.labelS.copyWith(color: color),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

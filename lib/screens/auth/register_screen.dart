@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../providers/auth_provider.dart';
 import '../home_screen.dart';
 
@@ -20,7 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  File? _logoFile;
+  XFile? _logoFile;
+  Uint8List? _logoBytes;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
@@ -38,7 +39,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _pickLogo() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) setState(() => _logoFile = File(picked.path));
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _logoFile = picked;
+        _logoBytes = bytes;
+      });
+    }
   }
 
   Future<void> _register() async {
@@ -50,7 +57,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       password: _passwordController.text,
       phone: _phoneController.text.trim(),
       address: _addressController.text.trim(),
-      logo: _logoFile,
+      logoBytes: _logoBytes,
+      logoName: _logoFile?.name,
     );
     if (!mounted) return;
     if (success) {
@@ -83,8 +91,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Create your\nRestaurant 🍽️',
@@ -111,9 +122,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         width: 2,
                         style: BorderStyle.solid,
                       ),
-                      image: _logoFile != null
+                      image: _logoBytes != null
                           ? DecorationImage(
-                              image: FileImage(_logoFile!),
+                              image: MemoryImage(_logoBytes!),
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -230,7 +241,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _field(

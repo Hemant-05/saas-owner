@@ -1,4 +1,3 @@
-
 class Restaurant {
   final String id;
   final String name;
@@ -81,6 +80,36 @@ class TableModel {
       isOccupied: json['isOccupied'] ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'restaurantId': restaurantId,
+        'tableNumber': tableNumber,
+        'tableName': tableName,
+        'qrCodeUrl': qrCodeUrl,
+        'qrCodeData': qrCodeData,
+        'isActive': isActive,
+        'isServiceable': isServiceable,
+        'isOccupied': isOccupied,
+      };
+
+  TableModel copyWith({
+    String? tableName,
+    bool? isServiceable,
+    bool? isOccupied,
+  }) {
+    return TableModel(
+      id: id,
+      restaurantId: restaurantId,
+      tableNumber: tableNumber,
+      tableName: tableName ?? this.tableName,
+      qrCodeUrl: qrCodeUrl,
+      qrCodeData: qrCodeData,
+      isActive: isActive,
+      isServiceable: isServiceable ?? this.isServiceable,
+      isOccupied: isOccupied ?? this.isOccupied,
+    );
+  }
 }
 
 class MenuItem {
@@ -120,17 +149,37 @@ class MenuItem {
     );
   }
 
-  MenuItem copyWith({bool? isAvailable}) {
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'restaurantId': restaurantId,
+        'name': name,
+        'description': description,
+        'price': price,
+        'category': category,
+        'imageUrl': imageUrl,
+        'isAvailable': isAvailable,
+        'isVeg': isVeg,
+      };
+
+  MenuItem copyWith({
+    String? name,
+    String? description,
+    double? price,
+    String? category,
+    String? imageUrl,
+    bool? isAvailable,
+    bool? isVeg,
+  }) {
     return MenuItem(
       id: id,
       restaurantId: restaurantId,
-      name: name,
-      description: description,
-      price: price,
-      category: category,
-      imageUrl: imageUrl,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
       isAvailable: isAvailable ?? this.isAvailable,
-      isVeg: isVeg,
+      isVeg: isVeg ?? this.isVeg,
     );
   }
 }
@@ -162,6 +211,15 @@ class OrderItem {
       customization: json['customization'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'menuItemId': menuItemId,
+        'name': name,
+        'price': price,
+        'quantity': quantity,
+        'subtotal': subtotal,
+        'customization': customization,
+      };
 }
 
 class Order {
@@ -230,6 +288,27 @@ class Order {
       placedAt: json['placedAt'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'restaurantId': restaurantId,
+        'tableId': tableId,
+        'tableNumber': tableNumber,
+        'tableName': tableName,
+        'orderNumber': orderNumber,
+        'items': items.map((item) => item.toJson()).toList(),
+        'subtotal': subtotal,
+        'taxPercent': taxPercent,
+        'taxAmount': taxAmount,
+        'totalAmount': totalAmount,
+        'orderStatus': orderStatus,
+        'paymentMethod': paymentMethod,
+        'paymentStatus': paymentStatus,
+        'razorpayOrderId': razorpayOrderId,
+        'razorpayPaymentId': razorpayPaymentId,
+        'paidAt': paidAt,
+        'placedAt': placedAt,
+      };
 
   Order copyWith({
     String? orderStatus,
@@ -317,4 +396,22 @@ class Bill {
       generatedAt: json['generatedAt'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'orderId': orderId,
+        'restaurantName': restaurantName,
+        'restaurantLogoUrl': restaurantLogoUrl,
+        'tableNumber': tableNumber,
+        'tableName': tableName,
+        'orderNumber': orderNumber,
+        'items': items.map((item) => item.toJson()).toList(),
+        'subtotal': subtotal,
+        'taxPercent': taxPercent,
+        'taxAmount': taxAmount,
+        'totalAmount': totalAmount,
+        'paymentMethod': paymentMethod,
+        'paymentStatus': paymentStatus,
+        'generatedAt': generatedAt,
+      };
 }

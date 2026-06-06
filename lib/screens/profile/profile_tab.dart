@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
 
@@ -18,7 +18,8 @@ class _ProfileTabState extends State<ProfileTab> {
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
   late TextEditingController _addressCtrl;
-  File? _newLogo;
+  XFile? _newLogo;
+  Uint8List? _newLogoBytes;
   bool _isSaving = false;
 
   @override
@@ -41,7 +42,13 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> _pickLogo() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) setState(() => _newLogo = File(picked.path));
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _newLogo = picked;
+        _newLogoBytes = bytes;
+      });
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -51,7 +58,8 @@ class _ProfileTabState extends State<ProfileTab> {
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
       address: _addressCtrl.text.trim(),
-      logo: _newLogo,
+      logoBytes: _newLogoBytes,
+      logoName: _newLogo?.name,
     );
     setState(() {
       _isSaving = false;
@@ -168,8 +176,8 @@ class _ProfileTabState extends State<ProfileTab> {
                         border: Border.all(color: const Color(0xFFFF6B35), width: 3),
                       ),
                       child: ClipOval(
-                        child: _newLogo != null
-                            ? Image.file(_newLogo!, fit: BoxFit.cover)
+                        child: _newLogoBytes != null
+                            ? Image.memory(_newLogoBytes!, fit: BoxFit.cover)
                             : (restaurant?.logoUrl != null
                                 ? CachedNetworkImage(
                                     imageUrl: restaurant!.logoUrl!,

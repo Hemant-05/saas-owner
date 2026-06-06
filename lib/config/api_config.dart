@@ -4,8 +4,10 @@ class ApiConfig {
   // For Android emulator: use http://10.0.2.2:5000
   // For physical device: use your machine's local IP e.g. http://192.168.29.174:5000
   // Note: For Android emulator, use http://10.0.2.2:5000
-  static const String baseUrl = 'http://10.11.53.2:5000/api';
-  static const String socketUrl = 'http://10.11.53.2:5000';
+  // static const String baseUrl = 'http://192.168.29.174:5000/api';
+  // static const String socketUrl = 'http://192.168.29.174:5000';
+    static const String baseUrl = 'https://saas-backend-oroj.onrender.com/api';
+    static const String socketUrl = 'https://saas-backend-oroj.onrender.com';
 
   // Auth endpoints
   static const String register = '$baseUrl/auth/register';
@@ -40,7 +42,7 @@ class ApiConfig {
 
   // Analytics
   static String get dashboardStats => '$baseUrl/analytics/dashboard';
-  static String get orderHistory => '$baseUrl/analytics/orders';
+  static String get orderHistory => '$baseUrl/orders/restaurant';
 
   // ── Inventory endpoints ────────────────────────────────────────────────────
   static const String inventoryItems = '$baseUrl/inventory/items';

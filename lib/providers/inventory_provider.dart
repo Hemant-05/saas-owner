@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -5,10 +6,15 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 import '../models/inventory_models.dart';
+import '../services/offline_cache_service.dart';
+import '../services/offline_sync_service.dart';
 
 enum InventoryState { idle, loading, loaded, error }
 
 class InventoryProvider with ChangeNotifier {
+  static const String _itemsCacheKey = 'owner_inventory_items';
+  static const String _lowStockCacheKey = 'owner_inventory_low_stock';
+
   InventoryState _state = InventoryState.idle;
   List<InventoryItem> _items = [];
   List<InventoryItem> _lowStockItems = [];
@@ -16,6 +22,8 @@ class InventoryProvider with ChangeNotifier {
   List<StockTransaction> _transactions = [];
   List<MenuItemIngredient> _menuLinks = [];
   String? _errorMessage;
+  bool _isOfflineMode = false;
+  DateTime? _lastUpdatedAt;
 
   InventoryState get state => _state;
   List<InventoryItem> get items => _items;
@@ -24,6 +32,8 @@ class InventoryProvider with ChangeNotifier {
   List<StockTransaction> get transactions => _transactions;
   List<MenuItemIngredient> get menuLinks => _menuLinks;
   String? get errorMessage => _errorMessage;
+  bool get isOfflineMode => _isOfflineMode;
+  DateTime? get lastUpdatedAt => _lastUpdatedAt;
 
   String? _token;
 
@@ -41,9 +51,17 @@ class InventoryProvider with ChangeNotifier {
 
   // ─── Fetch All Items ──────────────────────────────────────────────────────
   Future<void> fetchItems() async {
+    if (_items.isEmpty) {
+      final restored = await _restoreItemsFromCache();
+      if (restored) notifyListeners();
+    }
+
+    final hasSavedData = _items.isNotEmpty;
     try {
-      _state = InventoryState.loading;
-      notifyListeners();
+      if (!hasSavedData) {
+        _state = InventoryState.loading;
+        notifyListeners();
+      }
 
       final token = await _getToken();
       final response = await http.get(
@@ -62,13 +80,25 @@ class InventoryProvider with ChangeNotifier {
           _stats = InventoryStats.fromJson(data['data']['summary']);
         }
         _state = InventoryState.loaded;
+        _isOfflineMode = false;
+        _lastUpdatedAt = DateTime.now();
+        await _cacheItems();
+        await OfflineSyncService.markOnline();
       } else {
         _errorMessage = data['message'] ?? 'Failed to load inventory';
         _state = InventoryState.error;
       }
     } catch (e) {
-      _errorMessage = e.toString();
-      _state = InventoryState.error;
+      if (_isNetworkFailure(e)) {
+        _isOfflineMode = true;
+        await OfflineSyncService.markOffline();
+        _errorMessage =
+            hasSavedData ? null : 'Offline. No saved inventory yet.';
+        _state = hasSavedData ? InventoryState.loaded : InventoryState.error;
+      } else {
+        _errorMessage = e.toString();
+        _state = InventoryState.error;
+      }
     }
     notifyListeners();
   }
@@ -87,9 +117,23 @@ class InventoryProvider with ChangeNotifier {
         _lowStockItems = (data['data']['items'] as List)
             .map((j) => InventoryItem.fromJson(j))
             .toList();
+        await OfflineCacheService.writeJson(
+          _lowStockCacheKey,
+          _lowStockItems.map((item) => item.toJson()).toList(),
+        );
         notifyListeners();
       }
     } catch (_) {
+      final cached = await OfflineCacheService.readJsonList(_lowStockCacheKey);
+      if (cached != null) {
+        _lowStockItems = cached
+            .whereType<Map>()
+            .map((item) =>
+                InventoryItem.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
+        notifyListeners();
+        return;
+      }
       // Silently fail — low stock alerts are non-critical
     }
   }
@@ -118,10 +162,12 @@ class InventoryProvider with ChangeNotifier {
       }
 
       if (imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+        request.files
+            .add(await http.MultipartFile.fromPath('image', imageFile.path));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
 
@@ -131,6 +177,10 @@ class InventoryProvider with ChangeNotifier {
       }
       return data['message'] ?? 'Failed to create item';
     } catch (e) {
+      if (_isNetworkFailure(e)) {
+        await OfflineSyncService.markOffline();
+        return 'Connect to add inventory items.';
+      }
       return e.toString();
     }
   }
@@ -160,10 +210,12 @@ class InventoryProvider with ChangeNotifier {
       }
 
       if (imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+        request.files
+            .add(await http.MultipartFile.fromPath('image', imageFile.path));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 30));
       final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
 
@@ -173,6 +225,10 @@ class InventoryProvider with ChangeNotifier {
       }
       return data['message'] ?? 'Failed to update item';
     } catch (e) {
+      if (_isNetworkFailure(e)) {
+        await OfflineSyncService.markOffline();
+        return 'Connect to update inventory item details.';
+      }
       return e.toString();
     }
   }
@@ -188,11 +244,32 @@ class InventoryProvider with ChangeNotifier {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         _items.removeWhere((i) => i.id == itemId);
+        _recalculateStats();
+        await _cacheItems();
         notifyListeners();
         return null;
       }
       return data['message'] ?? 'Failed to delete item';
     } catch (e) {
+      if (_isNetworkFailure(e)) {
+        final removed = _items.where((i) => i.id == itemId).toList();
+        _items.removeWhere((i) => i.id == itemId);
+        _recalculateStats();
+        await _cacheItems();
+        await OfflineSyncService.enqueue(
+          QueuedRequest(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            method: 'DELETE',
+            url: ApiConfig.inventoryItemById(itemId),
+            body: const {},
+            auth: true,
+            label: 'Inventory item delete',
+            createdAt: DateTime.now(),
+          ),
+        );
+        notifyListeners();
+        return removed.isEmpty ? 'Item not found' : null;
+      }
       return e.toString();
     }
   }
@@ -204,20 +281,38 @@ class InventoryProvider with ChangeNotifier {
     required String transactionType,
     String? note,
   }) async {
+    final previousItems = List<InventoryItem>.from(_items);
+    final localIdx = _items.indexWhere((item) => item.id == itemId);
+    if (localIdx != -1) {
+      final current = _items[localIdx];
+      final nextStock = transactionType == 'manual_add'
+          ? current.currentStock + quantity
+          : (current.currentStock - quantity).clamp(0, double.infinity);
+      _items[localIdx] = current.copyWith(
+        currentStock: nextStock.toDouble(),
+        isLowStock: nextStock <= current.lowStockThreshold,
+      );
+      _recalculateStats();
+      await _cacheItems();
+      notifyListeners();
+    }
+
     try {
       final token = await _getToken();
-      final response = await http.post(
-        Uri.parse(ApiConfig.inventoryAdjust(itemId)),
-        headers: {
-          'Authorization': 'Bearer ${token ?? ''}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'quantity': quantity,
-          'transactionType': transactionType,
-          'note': note ?? '',
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.inventoryAdjust(itemId)),
+            headers: {
+              'Authorization': 'Bearer ${token ?? ''}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'quantity': quantity,
+              'transactionType': transactionType,
+              'note': note ?? '',
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
@@ -227,11 +322,36 @@ class InventoryProvider with ChangeNotifier {
         if (idx != -1) {
           _items[idx] = updatedItem;
         }
+        _recalculateStats();
+        await _cacheItems();
+        await OfflineSyncService.markOnline();
         notifyListeners();
         return null;
       }
       return data['message'] ?? 'Failed to adjust stock';
     } catch (e) {
+      if (_isNetworkFailure(e)) {
+        await OfflineSyncService.enqueue(
+          QueuedRequest(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            method: 'POST',
+            url: ApiConfig.inventoryAdjust(itemId),
+            body: {
+              'quantity': quantity,
+              'transactionType': transactionType,
+              'note': note ?? '',
+            },
+            auth: true,
+            label: 'Stock adjustment',
+            createdAt: DateTime.now(),
+          ),
+        );
+        return null;
+      }
+      _items = previousItems;
+      _recalculateStats();
+      await _cacheItems();
+      notifyListeners();
       return e.toString();
     }
   }
@@ -241,7 +361,8 @@ class InventoryProvider with ChangeNotifier {
     try {
       final token = await _getToken();
       final response = await http.get(
-        Uri.parse('${ApiConfig.inventoryItemById(itemId)}/transactions?page=$page&limit=50'),
+        Uri.parse(
+            '${ApiConfig.inventoryItemById(itemId)}/transactions?page=$page&limit=50'),
         headers: {'Authorization': 'Bearer ${token ?? ''}'},
       ).timeout(const Duration(seconds: 15));
 
@@ -325,6 +446,55 @@ class InventoryProvider with ChangeNotifier {
     } catch (e) {
       return e.toString();
     }
+  }
+
+  Future<bool> _restoreItemsFromCache() async {
+    final cached = await OfflineCacheService.readJsonMap(_itemsCacheKey);
+    if (cached == null) return false;
+    final items = cached['items'];
+    if (items is! List) return false;
+
+    _items = items
+        .whereType<Map>()
+        .map((item) => InventoryItem.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+
+    if (cached['stats'] is Map) {
+      _stats = InventoryStats.fromJson(
+        Map<String, dynamic>.from(cached['stats']),
+      );
+    } else {
+      _recalculateStats();
+    }
+
+    _state = InventoryState.loaded;
+    _lastUpdatedAt = await OfflineCacheService.savedAt(_itemsCacheKey);
+    return _items.isNotEmpty;
+  }
+
+  Future<void> _cacheItems() {
+    return OfflineCacheService.writeJson(_itemsCacheKey, {
+      'items': _items.map((item) => item.toJson()).toList(),
+      'stats': _stats.toJson(),
+    });
+  }
+
+  void _recalculateStats() {
+    _stats = InventoryStats(
+      totalItems: _items.length,
+      lowStockCount:
+          _items.where((item) => item.isLowStock && !item.isOutOfStock).length,
+      outOfStockCount: _items.where((item) => item.isOutOfStock).length,
+    );
+  }
+
+  bool _isNetworkFailure(Object error) {
+    final message = error.toString().toLowerCase();
+    return error is SocketException ||
+        error is TimeoutException ||
+        message.contains('connection') ||
+        message.contains('timed out') ||
+        message.contains('network');
   }
 
   void clearToken() {

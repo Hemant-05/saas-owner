@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -7,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Central API service with consistent error handling
 class ApiService {
   static const String _tokenKey = 'jwt_token';
+  static const Duration _requestTimeout = Duration(seconds: 10);
+  static const Duration _uploadTimeout = Duration(seconds: 25);
 
   // ─── Token Storage ──────────────────────────────────────────────────────────
 
@@ -44,23 +47,28 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return body;
       } else {
-        throw ApiException(body['message'] ?? 'Server error', response.statusCode);
+        throw ApiException(
+            body['message'] ?? 'Server error', response.statusCode);
       }
     } on ApiException {
       rethrow;
     } catch (e) {
-      throw ApiException('Failed to parse server response', response.statusCode);
+      throw ApiException(
+          'Failed to parse server response', response.statusCode);
     }
   }
 
-  static Future<Map<String, dynamic>> get(String url, {bool auth = false}) async {
+  static Future<Map<String, dynamic>> get(String url,
+      {bool auth = false}) async {
     try {
       final response = await http
           .get(Uri.parse(url), headers: await _headers(auth: auth))
-          .timeout(const Duration(seconds: 30));
+          .timeout(_requestTimeout);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -80,10 +88,12 @@ class ApiService {
             headers: await _headers(auth: auth),
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(_requestTimeout);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -103,10 +113,12 @@ class ApiService {
             headers: await _headers(auth: auth),
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(_requestTimeout);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -114,14 +126,17 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> delete(String url, {bool auth = false}) async {
+  static Future<Map<String, dynamic>> delete(String url,
+      {bool auth = false}) async {
     try {
       final response = await http
           .delete(Uri.parse(url), headers: await _headers(auth: auth))
-          .timeout(const Duration(seconds: 30));
+          .timeout(_requestTimeout);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -154,11 +169,13 @@ class ApiService {
         ));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+      final streamedResponse = await request.send().timeout(_uploadTimeout);
       final response = await http.Response.fromStream(streamedResponse);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -191,11 +208,13 @@ class ApiService {
         ));
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 60));
+      final streamedResponse = await request.send().timeout(_uploadTimeout);
       final response = await http.Response.fromStream(streamedResponse);
       return _parseResponse(response);
+    } on TimeoutException {
+      throw ApiException('Connection unavailable', 0);
     } on SocketException {
-      throw ApiException('No internet connection', 0);
+      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -208,6 +227,8 @@ class ApiException implements Exception {
   final String message;
   final int statusCode;
   ApiException(this.message, this.statusCode);
+
+  bool get isNetworkError => statusCode == 0;
 
   @override
   String toString() => 'ApiException($statusCode): $message';

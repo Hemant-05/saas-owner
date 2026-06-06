@@ -49,7 +49,8 @@ class InventoryItem {
       imagePublicId: json['imagePublicId'],
       unit: json['unit'] ?? '',
       currentStock: (json['currentStock'] as num?)?.toDouble() ?? 0.0,
-      lowStockThreshold: (json['lowStockThreshold'] as num?)?.toDouble() ?? 10.0,
+      lowStockThreshold:
+          (json['lowStockThreshold'] as num?)?.toDouble() ?? 10.0,
       costPerUnit: (json['costPerUnit'] as num?)?.toDouble(),
       isActive: json['isActive'] ?? true,
       isLowStock: json['isLowStock'] ?? false,
@@ -63,12 +64,15 @@ class InventoryItem {
         'restaurantId': restaurantId,
         'name': name,
         'imageUrl': imageUrl,
+        'imagePublicId': imagePublicId,
         'unit': unit,
         'currentStock': currentStock,
         'lowStockThreshold': lowStockThreshold,
         'costPerUnit': costPerUnit,
         'isActive': isActive,
         'isLowStock': isLowStock,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
       };
 
   InventoryItem copyWith({
@@ -114,6 +118,12 @@ class InventoryStats {
 
   factory InventoryStats.empty() =>
       const InventoryStats(totalItems: 0, lowStockCount: 0, outOfStockCount: 0);
+
+  Map<String, dynamic> toJson() => {
+        'totalItems': totalItems,
+        'lowStockCount': lowStockCount,
+        'outOfStockCount': outOfStockCount,
+      };
 }
 
 class StockTransaction {
@@ -183,6 +193,22 @@ class StockTransaction {
       createdAt: json['createdAt'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'restaurantId': restaurantId,
+        'inventoryItemId': inventoryItemId,
+        'inventoryItemName': inventoryItemName,
+        'unit': unit,
+        'transactionType': transactionType,
+        'quantityChanged': quantityChanged,
+        'quantityBefore': quantityBefore,
+        'quantityAfter': quantityAfter,
+        'referenceOrderId': referenceOrderId,
+        'note': note,
+        'createdBy': createdBy,
+        'createdAt': createdAt,
+      };
 }
 
 class MenuItemIngredient {
@@ -242,11 +268,24 @@ class MenuItemIngredient {
       restaurantId: json['restaurantId'] ?? '',
       menuItemId: menuItemId,
       inventoryItemId: invItemId,
-      quantityUsedPerServing: (json['quantityUsedPerServing'] as num?)?.toDouble() ?? 0.0,
+      quantityUsedPerServing:
+          (json['quantityUsedPerServing'] as num?)?.toDouble() ?? 0.0,
       unit: unitValue,
       menuItemName: menuItemName,
       inventoryItemName: invItemName,
       inventoryItemCurrentStock: invItemStock,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        '_id': id,
+        'restaurantId': restaurantId,
+        'menuItemId': menuItemId,
+        'inventoryItemId': inventoryItemId,
+        'quantityUsedPerServing': quantityUsedPerServing,
+        'unit': unit,
+        'menuItemName': menuItemName,
+        'inventoryItemName': inventoryItemName,
+        'inventoryItemCurrentStock': inventoryItemCurrentStock,
+      };
 }

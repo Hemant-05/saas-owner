@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
+import '../services/offline_cache_service.dart';
+import '../services/offline_sync_service.dart';
 import '../config/api_config.dart';
-import 'dart:io';
 
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
 class AuthProvider extends ChangeNotifier {
+  static const String _restaurantCacheKey = 'owner_restaurant_profile';
+
   AuthState _state = AuthState.initial;
   Restaurant? _restaurant;
   String? _errorMessage;
@@ -28,12 +31,38 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await ApiService.get(ApiConfig.me, auth: true);
       _restaurant = Restaurant.fromJson(response['data']['restaurant']);
+      await _cacheRestaurant(_restaurant!);
       _state = AuthState.authenticated;
+      await OfflineSyncService.markOnline();
       // Non-blocking: register FCM token on every app start
-      NotificationService().registerTokenForRestaurant(token).catchError((_) {});
+      NotificationService()
+          .registerTokenForRestaurant(token)
+          .catchError((_) {});
+    } on ApiException catch (e) {
+      if (e.isNetworkError) {
+        final cached =
+            await OfflineCacheService.readJsonMap(_restaurantCacheKey);
+        if (cached != null) {
+          _restaurant = Restaurant.fromJson(cached);
+          _state = AuthState.authenticated;
+          await OfflineSyncService.markOffline();
+        } else {
+          _state = AuthState.unauthenticated;
+        }
+      } else {
+        await ApiService.clearToken();
+        _state = AuthState.unauthenticated;
+      }
     } catch (_) {
-      await ApiService.clearToken();
-      _state = AuthState.unauthenticated;
+      final cached = await OfflineCacheService.readJsonMap(_restaurantCacheKey);
+      if (cached != null) {
+        _restaurant = Restaurant.fromJson(cached);
+        _state = AuthState.authenticated;
+        await OfflineSyncService.markOffline();
+      } else {
+        await ApiService.clearToken();
+        _state = AuthState.unauthenticated;
+      }
     }
     notifyListeners();
   }
@@ -51,9 +80,13 @@ class AuthProvider extends ChangeNotifier {
       final token = data['token'] as String;
       await ApiService.saveToken(token);
       _restaurant = Restaurant.fromJson(data['restaurant']);
+      await _cacheRestaurant(_restaurant!);
       _state = AuthState.authenticated;
+      await OfflineSyncService.markOnline();
       // Non-blocking: register FCM token after login
-      NotificationService().registerTokenForRestaurant(token).catchError((_) {});
+      NotificationService()
+          .registerTokenForRestaurant(token)
+          .catchError((_) {});
     } on ApiException catch (e) {
       _errorMessage = e.message;
       _state = AuthState.error;
@@ -70,14 +103,15 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String phone,
     String? address,
-    File? logo,
+    List<int>? logoBytes,
+    String? logoName,
   }) async {
     _state = AuthState.loading;
     _errorMessage = null;
     notifyListeners();
     try {
       Map<String, dynamic> response;
-      if (logo != null) {
+      if (logoBytes != null && logoName != null) {
         response = await ApiService.postMultipart(
           ApiConfig.register,
           fields: {
@@ -87,8 +121,8 @@ class AuthProvider extends ChangeNotifier {
             'phone': phone,
             if (address != null) 'address': address,
           },
-          fileBytes: await logo.readAsBytes(),
-          fileName: logo.path.split(Platform.pathSeparator).last,
+          fileBytes: logoBytes,
+          fileName: logoName,
           fileField: 'logo',
         );
       } else {
@@ -103,11 +137,18 @@ class AuthProvider extends ChangeNotifier {
       final data = response['data'];
       await ApiService.saveToken(data['token']);
       _restaurant = Restaurant.fromJson(data['restaurant']);
+      await _cacheRestaurant(_restaurant!);
       _state = AuthState.authenticated;
+      await OfflineSyncService.markOnline();
       notifyListeners();
       return true;
     } on ApiException catch (e) {
       _errorMessage = e.message;
+      _state = AuthState.error;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred';
       _state = AuthState.error;
       notifyListeners();
       return false;
@@ -118,7 +159,8 @@ class AuthProvider extends ChangeNotifier {
     String? name,
     String? phone,
     String? address,
-    File? logo,
+    List<int>? logoBytes,
+    String? logoName,
   }) async {
     try {
       final response = await ApiService.putMultipart(
@@ -128,16 +170,21 @@ class AuthProvider extends ChangeNotifier {
           if (phone != null) 'phone': phone,
           if (address != null) 'address': address,
         },
-        fileBytes: logo != null ? await logo.readAsBytes() : null,
-        fileName: logo?.path.split(Platform.pathSeparator).last,
+        fileBytes: logoBytes,
+        fileName: logoName,
         fileField: 'logo',
         auth: true,
       );
       _restaurant = Restaurant.fromJson(response['data']['restaurant']);
+      await _cacheRestaurant(_restaurant!);
       notifyListeners();
       return true;
     } on ApiException catch (e) {
       _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'An unexpected error occurred';
       notifyListeners();
       return false;
     }
@@ -145,8 +192,16 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     await ApiService.clearToken();
+    await OfflineCacheService.remove(_restaurantCacheKey);
     _restaurant = null;
     _state = AuthState.unauthenticated;
     notifyListeners();
+  }
+
+  Future<void> _cacheRestaurant(Restaurant restaurant) {
+    return OfflineCacheService.writeJson(
+      _restaurantCacheKey,
+      restaurant.toJson(),
+    );
   }
 }

@@ -299,10 +299,7 @@ class _DashboardTabState extends State<DashboardTab> {
           const Divider(color: AppColors.border, height: 1),
           Expanded(
             child: Consumer<DashboardProvider>(builder: (ctx, prov, _) {
-              if (prov.orderHistory.isEmpty && !prov.isLoadingHistory) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  prov.fetchOrderHistory(refresh: true);
-                });
+              if (prov.isLoadingHistory && prov.orderHistory.isEmpty) {
                 return const Center(
                   child: CircularProgressIndicator(color: AppColors.accent),
                 );

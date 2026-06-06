@@ -11,6 +11,7 @@ import 'providers/dashboard_provider.dart';
 import 'providers/inventory_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
+import 'services/offline_sync_service.dart';
 import 'package:flutter/gestures.dart';
 import 'theme/app_theme.dart';
 
@@ -41,6 +42,8 @@ void main() async {
   } catch (e) {
     debugPrint('[Main] NotificationService init failed (non-fatal): $e');
   }
+
+  await OfflineSyncService.initialize();
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,

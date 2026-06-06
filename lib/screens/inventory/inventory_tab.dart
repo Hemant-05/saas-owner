@@ -451,7 +451,7 @@ class _InventoryItemCard extends StatelessWidget {
                   borderRadius: AppRadius.borderSmall,
                   border: Border.all(color: AppColors.border),
                 ),
-                child: item.imageUrl != null
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
                     ? ClipRRect(
                         borderRadius: AppRadius.borderSmall,
                         child: Image.network(
@@ -620,7 +620,7 @@ class _DesktopItemDetail extends StatelessWidget {
           // Header
           Row(
             children: [
-              if (item.imageUrl != null)
+              if (item.imageUrl != null && item.imageUrl!.isNotEmpty)
                 ClipRRect(
                   borderRadius: AppRadius.borderMedium,
                   child: Image.network(
