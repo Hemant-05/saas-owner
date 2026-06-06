@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../models/models.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_widgets.dart';
+import '../home_screen.dart';
 import 'package:restaurant_owner_app/screens/orders/order_detail_screen.dart';
 import 'order_history_screen.dart';
-import '../home_screen.dart';
 
 class DashboardTab extends StatefulWidget {
   const DashboardTab({super.key});
@@ -28,16 +28,17 @@ class _DashboardTabState extends State<DashboardTab> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: _buildAppBar(context),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: _buildAppBar(context, theme),
       body: Consumer<DashboardProvider>(
         builder: (context, provider, child) {
           if (provider.state == DashboardState.loading &&
               provider.totalOrders == 0) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.accent),
+            return Center(
+              child: CircularProgressIndicator(color: theme.primaryColor),
             );
           }
 
@@ -46,16 +47,15 @@ class _DashboardTabState extends State<DashboardTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline_rounded,
-                      color: AppColors.error, size: 48),
+                  Icon(Icons.error_outline_rounded,
+                      color: theme.colorScheme.error, size: 48),
                   const SizedBox(height: AppSpacing.md),
                   Text(provider.errorMessage ?? 'An error occurred',
-                      style: AppTextStyles.bodyM),
+                      style: theme.textTheme.bodyMedium),
                   const SizedBox(height: AppSpacing.md),
-                  AppButton(
-                    label: 'Retry',
+                  ElevatedButton(
                     onPressed: () => provider.fetchDashboardStats(),
-                    variant: AppButtonVariant.primary,
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
@@ -63,61 +63,59 @@ class _DashboardTabState extends State<DashboardTab> {
           }
 
           return isDesktop
-              ? _buildDesktopLayout(context, provider)
-              : _buildMobileLayout(context, provider);
+              ? _buildDesktopLayout(context, provider, theme)
+              : _buildMobileLayout(context, provider, theme);
         },
       ),
     );
   }
 
-  AppBar _buildAppBar(BuildContext context) {
+  AppBar _buildAppBar(BuildContext context, ThemeData theme) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: theme.colorScheme.surface,
       elevation: 0,
       leading: isDesktop
           ? null
           : Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+                icon: Icon(Icons.menu_rounded, color: theme.iconTheme.color),
                 onPressed: () => HomeScreen.openDrawer(),
               ),
             ),
       automaticallyImplyLeading: !isDesktop,
-      title: const Text(
+      title: Text(
         'Dashboard',
-        style: AppTextStyles.headingM,
+        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
       ),
       actions: [
         Consumer<DashboardProvider>(
           builder: (_, provider, __) => IconButton(
             icon: provider.state == DashboardState.loading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
-                    child:
-                        CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2))
-                : const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+                    child: CircularProgressIndicator(
+                        color: theme.primaryColor, strokeWidth: 2))
+                : Icon(Icons.refresh_rounded, color: theme.iconTheme.color),
             onPressed: () => provider.fetchDashboardStats(),
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.history_rounded, color: AppColors.textSecondary),
+          icon: Icon(Icons.history_rounded, color: theme.iconTheme.color),
           onPressed: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
         ),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(
-            height: 1, color: AppColors.border),
+        child: Container(height: 1, color: theme.dividerColor.withOpacity(0.1)),
       ),
     );
   }
 
-  // ─── Desktop Layout ─────────────────────────────────────────────────────────
   Widget _buildDesktopLayout(
-      BuildContext context, DashboardProvider provider) {
+      BuildContext context, DashboardProvider provider, ThemeData theme) {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1400),
@@ -126,41 +124,45 @@ class _DashboardTabState extends State<DashboardTab> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left: Stats
               Expanded(
                 flex: 3,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _sectionLabel('Today\'s Performance'),
+                      _sectionLabel('Today\'s Overview', theme),
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
                               child: _statCard(
-                                  'Today\'s Earnings',
+                                  'Earnings',
                                   '₹${provider.todayEarnings.toStringAsFixed(0)}',
-                                  Icons.today_rounded,
-                                  AppColors.accent)),
+                                  Icons.payments_rounded,
+                                  theme.primaryColor,
+                                  theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
-                                  'Today\'s Orders',
+                                  'Orders',
                                   '${provider.todayOrders}',
                                   Icons.receipt_long_rounded,
-                                  AppColors.success)),
+                                  AppColors.success,
+                                  theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
-                                  'Today\'s Avg',
+                                  'Avg Order',
                                   '₹${provider.todayAvgOrderValue.toStringAsFixed(0)}',
                                   Icons.analytics_rounded,
-                                  AppColors.info)),
+                                  AppColors.info,
+                                  theme)),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _sectionLabel('All Time'),
+                      _buildChartSection(theme, provider),
+                      const SizedBox(height: AppSpacing.xl),
+                      _sectionLabel('Lifetime Stats', theme),
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
@@ -169,21 +171,24 @@ class _DashboardTabState extends State<DashboardTab> {
                                   'Total Earnings',
                                   '₹${provider.totalEarnings.toStringAsFixed(0)}',
                                   Icons.account_balance_wallet_rounded,
-                                  Colors.orange)),
+                                  Colors.orange,
+                                  theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
                                   'Total Orders',
                                   '${provider.totalOrders}',
                                   Icons.bar_chart_rounded,
-                                  Colors.purple)),
+                                  Colors.purple,
+                                  theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
-                                  'Avg Order Value',
+                                  'Avg Value',
                                   '₹${provider.avgOrderValue.toStringAsFixed(0)}',
                                   Icons.trending_up_rounded,
-                                  Colors.pink)),
+                                  Colors.pink,
+                                  theme)),
                         ],
                       ),
                     ],
@@ -191,10 +196,9 @@ class _DashboardTabState extends State<DashboardTab> {
                 ),
               ),
               const SizedBox(width: AppSpacing.xl),
-              // Right: Order History panel
               Expanded(
                 flex: 2,
-                child: _buildHistoryPanel(context, provider),
+                child: _buildHistoryPanel(context, provider, theme),
               ),
             ],
           ),
@@ -203,61 +207,80 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  // ─── Mobile Layout ───────────────────────────────────────────────────────────
   Widget _buildMobileLayout(
-      BuildContext context, DashboardProvider provider) {
+      BuildContext context, DashboardProvider provider, ThemeData theme) {
     return RefreshIndicator(
       onRefresh: () => provider.fetchDashboardStats(),
-      color: AppColors.accent,
-      backgroundColor: AppColors.surfaceElevated,
+      color: theme.primaryColor,
+      backgroundColor: theme.colorScheme.surface,
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          _sectionLabel('Today\'s Performance'),
+          _sectionLabel('Today\'s Overview', theme),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
-                  child: _statCard('Today\'s Earnings',
+                  child: _statCard(
+                      'Earnings',
                       '₹${provider.todayEarnings.toStringAsFixed(0)}',
-                      Icons.today_rounded, AppColors.accent)),
+                      Icons.payments_rounded,
+                      theme.primaryColor,
+                      theme)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                  child: _statCard('Today\'s Orders', '${provider.todayOrders}',
-                      Icons.receipt_long_rounded, AppColors.success)),
+                  child: _statCard(
+                      'Orders',
+                      '${provider.todayOrders}',
+                      Icons.receipt_long_rounded,
+                      AppColors.success,
+                      theme)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          _statCard('Today\'s Avg Order Value',
+          _statCard(
+              'Avg Order Value',
               '₹${provider.todayAvgOrderValue.toStringAsFixed(0)}',
-              Icons.analytics_rounded, AppColors.info),
-          const SizedBox(height: AppSpacing.lg),
-          _sectionLabel('All Time'),
+              Icons.analytics_rounded,
+              AppColors.info,
+              theme),
+          const SizedBox(height: AppSpacing.xl),
+          _buildChartSection(theme, provider),
+          const SizedBox(height: AppSpacing.xl),
+          _sectionLabel('Lifetime Stats', theme),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
-                  child: _statCard('Total Earnings',
+                  child: _statCard(
+                      'Total Earnings',
                       '₹${provider.totalEarnings.toStringAsFixed(0)}',
                       Icons.account_balance_wallet_rounded,
-                      Colors.orange)),
+                      Colors.orange,
+                      theme)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                  child: _statCard('Total Orders', '${provider.totalOrders}',
-                      Icons.bar_chart_rounded, Colors.purple)),
+                  child: _statCard(
+                      'Total Orders',
+                      '${provider.totalOrders}',
+                      Icons.bar_chart_rounded,
+                      Colors.purple,
+                      theme)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          _statCard('Avg Order Value',
+          _statCard(
+              'Avg Value',
               '₹${provider.avgOrderValue.toStringAsFixed(0)}',
-              Icons.trending_up_rounded, Colors.pink),
+              Icons.trending_up_rounded,
+              Colors.pink,
+              theme),
           const SizedBox(height: AppSpacing.xl),
-          AppButton(
-            label: 'View Full Order History',
-            icon: Icons.history_rounded,
+          ElevatedButton.icon(
+            label: const Text('View Full Order History'),
+            icon: const Icon(Icons.history_rounded),
             onPressed: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
-            variant: AppButtonVariant.primary,
           ),
           const SizedBox(height: AppSpacing.xl),
         ],
@@ -265,13 +288,137 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  // ─── History Panel (Desktop right column) ───────────────────────────────────
-  Widget _buildHistoryPanel(BuildContext context, DashboardProvider provider) {
+  Widget _buildChartSection(ThemeData theme, DashboardProvider provider) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: AppRadius.borderLarge,
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.insights_rounded, color: theme.primaryColor),
+              const SizedBox(width: 8),
+              Text('Revenue Trend',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 220,
+            child: provider.totalOrders == 0
+                ? Center(
+                    child: Text('Not enough data to display chart',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5))),
+                  )
+                : LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: theme.dividerColor.withOpacity(0.1),
+                            strokeWidth: 1,
+                          );
+                        },
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              const style = TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold);
+                              String text;
+                              switch (value.toInt()) {
+                                case 1:
+                                  text = 'Mon';
+                                  break;
+                                case 3:
+                                  text = 'Wed';
+                                  break;
+                                case 5:
+                                  text = 'Fri';
+                                  break;
+                                case 7:
+                                  text = 'Sun';
+                                  break;
+                                default:
+                                  text = '';
+                                  break;
+                              }
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                child: Text(text,
+                                    style: style.copyWith(
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withOpacity(0.5))),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      minX: 1,
+                      maxX: 7,
+                      minY: 0,
+                      maxY: provider.todayEarnings > 0 ? provider.todayEarnings * 1.5 : 100,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: [
+                            const FlSpot(1, 150),
+                            const FlSpot(2, 200),
+                            const FlSpot(3, 100),
+                            const FlSpot(4, 300),
+                            const FlSpot(5, 250),
+                            const FlSpot(6, 400),
+                            FlSpot(7, provider.todayEarnings.toDouble()),
+                          ],
+                          isCurved: true,
+                          color: theme.primaryColor,
+                          barWidth: 4,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: theme.primaryColor.withOpacity(0.15),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryPanel(
+      BuildContext context, DashboardProvider provider, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: theme.colorScheme.surface,
         borderRadius: AppRadius.borderLarge,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        boxShadow: AppShadows.md,
       ),
       child: Column(
         children: [
@@ -279,36 +426,47 @@ class _DashboardTabState extends State<DashboardTab> {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
-                const Icon(Icons.history_rounded,
-                    color: AppColors.accent, size: 20),
+                Icon(Icons.history_rounded, color: theme.primaryColor, size: 20),
                 const SizedBox(width: AppSpacing.sm),
-                const Text(
-                  'Order History',
-                  style: AppTextStyles.headingS,
-                ),
+                Text('Recent Orders',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
                 const Spacer(),
                 TextButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const OrderHistoryScreen())),
                   child: Text('View All',
-                      style: AppTextStyles.labelS.copyWith(color: AppColors.accent)),
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(color: theme.primaryColor)),
                 ),
               ],
             ),
           ),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: theme.dividerColor.withOpacity(0.1), height: 1),
           Expanded(
             child: Consumer<DashboardProvider>(builder: (ctx, prov, _) {
               if (prov.isLoadingHistory && prov.orderHistory.isEmpty) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.accent),
+                return Center(
+                  child: CircularProgressIndicator(color: theme.primaryColor),
                 );
               }
               if (prov.orderHistory.isEmpty) {
-                return const EmptyStateWidget(
-                  icon: Icons.history_rounded,
-                  title: 'No delivered orders',
-                  subtitle: 'Completed orders will appear here',
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.history_rounded,
+                          size: 48,
+                          color: theme.iconTheme.color?.withOpacity(0.2)),
+                      const SizedBox(height: 16),
+                      Text('No recent orders',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withOpacity(0.5))),
+                    ],
+                  ),
                 );
               }
               return ListView.separated(
@@ -317,7 +475,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
                 itemBuilder: (_, i) {
                   final order = prov.orderHistory[i];
-                  return _compactHistoryCard(context, order);
+                  return _compactHistoryCard(context, order, theme);
                 },
               );
             }),
@@ -327,82 +485,101 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  // ─── Widgets ─────────────────────────────────────────────────────────────────
-
-  Widget _sectionLabel(String label) => Text(
+  Widget _sectionLabel(String label, ThemeData theme) => Text(
         label,
-        style: AppTextStyles.labelM,
+        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       );
 
-  Widget _statCard(String label, String value, IconData icon, Color color) {
-    return AppCard(
+  Widget _statCard(
+      String label, String value, IconData icon, Color color, ThemeData theme) {
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      color: color.withValues(alpha: 0.08),
-      border: Border.all(color: color.withValues(alpha: 0.2)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: AppRadius.borderMedium,
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        boxShadow: AppShadows.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text(
             value,
-            style: AppTextStyles.headingL,
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted),
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7)),
           ),
         ],
       ),
     );
   }
 
-  Widget _emptyCard(String msg) => AppCard(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        // margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: Center(
-          child: Text(msg, style: AppTextStyles.bodyM.copyWith(color: AppColors.textMuted)),
-        ),
-      );
-
-  Widget _compactHistoryCard(BuildContext context, Order order) {
+  Widget _compactHistoryCard(BuildContext context, Order order, ThemeData theme) {
     final df = DateFormat('dd MMM • hh:mm a');
-    return GestureDetector(
+    return InkWell(
       onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
               builder: (_) =>
                   OrderDetailScreen(orderId: order.id, order: order))),
-      child: AppCard(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
+      borderRadius: AppRadius.borderSmall,
+      child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+          borderRadius: AppRadius.borderSmall,
+        ),
         child: Row(
           children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.receipt_long, size: 16, color: theme.primaryColor),
+            ),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     order.orderNumber,
-                    style: AppTextStyles.labelM,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Table ${order.tableNumber} • ${df.format(DateTime.parse(order.placedAt!))}',
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
                   ),
                 ],
               ),
             ),
             Text(
               '₹${order.totalAmount.toStringAsFixed(0)}',
-              style: AppTextStyles.labelL.copyWith(color: AppColors.accent),
+              style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold, color: theme.primaryColor),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textMuted, size: 18),
+            Icon(Icons.chevron_right_rounded,
+                color: theme.iconTheme.color?.withOpacity(0.3), size: 18),
           ],
         ),
       ),

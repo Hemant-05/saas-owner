@@ -216,18 +216,24 @@ class NotificationService {
     });
 
     // Terminated state tap — app was killed, user tapped notification
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
-      if (message != null) {
-        debugPrint('[FCM Terminated] App opened via notification tap');
-        _handleIncomingMessage(message, showLocal: false);
-        // Delay navigation until app is fully built
-        Future.delayed(const Duration(milliseconds: 500), () {
-          final type = message.data['type'] ?? '';
-          onNotificationTap?.call(
-              type, Map<String, String>.from(message.data));
+    try {
+      if (!kIsWeb) {
+        FirebaseMessaging.instance.getInitialMessage().then((message) {
+          if (message != null) {
+            debugPrint('[FCM Terminated] App opened via notification tap');
+            _handleIncomingMessage(message, showLocal: false);
+            // Delay navigation until app is fully built
+            Future.delayed(const Duration(milliseconds: 500), () {
+              final type = message.data['type'] ?? '';
+              onNotificationTap?.call(
+                  type, Map<String, String>.from(message.data));
+            });
+          }
         });
       }
-    });
+    } catch (e) {
+      debugPrint('[NotificationService] getInitialMessage error: $e');
+    }
   }
 
   Future<void> _handleIncomingMessage(RemoteMessage message,

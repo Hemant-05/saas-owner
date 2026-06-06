@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import '../../providers/auth_provider.dart';
 import '../home_screen.dart';
+import 'login_screen.dart';
+import '../../theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,60 +17,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
-  XFile? _logoFile;
-  Uint8List? _logoBytes;
+  final _restaurantNameController = TextEditingController();
+
   bool _obscurePassword = true;
-  bool _obscureConfirm = true;
+  String _businessType = 'restaurant';
+
+  final List<String> _foodImages = [
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
+    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
+    'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
+    'https://images.unsplash.com/photo-1484723091791-c11756247fb2?w=500&q=80',
+    'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=500&q=80',
+    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=500&q=80',
+    'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=500&q=80',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80',
+    'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=500&q=80',
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _phoneController.dispose();
-    _addressController.dispose();
+    _restaurantNameController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickLogo() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _logoFile = picked;
-        _logoBytes = bytes;
-      });
-    }
   }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    final auth = context.read<AuthProvider>();
-    final success = await auth.register(
+    
+    final authProvider = context.read<AuthProvider>();
+    
+    await authProvider.register(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      phone: _phoneController.text.trim(),
-      address: _addressController.text.trim(),
-      logoBytes: _logoBytes,
-      logoName: _logoFile?.name,
+      restaurantName: _restaurantNameController.text.trim(),
+      businessType: _businessType,
     );
+
     if (!mounted) return;
-    if (success) {
-      Navigator.of(context).pushAndRemoveUntil(
+
+    if (authProvider.isAuthenticated) {
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (_) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.errorMessage ?? 'Registration failed'),
-          backgroundColor: const Color(0xFFFF4757),
+          content: Text(authProvider.errorMessage ?? 'Registration failed'),
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -79,177 +75,228 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Create your\nRestaurant 🍽️',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Logo picker
-              Center(
-                child: GestureDetector(
-                  onTap: _pickLogo,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.08),
-                      border: Border.all(
-                        color: const Color(0xFFFF6B35),
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                      image: _logoBytes != null
-                          ? DecorationImage(
-                              image: MemoryImage(_logoBytes!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    child: _logoFile == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.add_a_photo_rounded,
-                                  color: Color(0xFFFF6B35), size: 28),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Logo',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          )
-                        : null,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 800) {
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Center(child: _buildForm(context)),
                   ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _field(_nameController, 'Restaurant Name', Icons.store_rounded,
-                        validator: (v) => v!.isEmpty ? 'Name is required' : null),
-                    const SizedBox(height: 14),
-                    _field(_emailController, 'Email Address', Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (v) {
-                          if (v!.isEmpty) return 'Email is required';
-                          if (!v.contains('@')) return 'Enter valid email';
-                          return null;
-                        }),
-                    const SizedBox(height: 14),
-                    _field(
-                      _passwordController,
-                      'Password',
-                      Icons.lock_outline_rounded,
-                      obscureText: _obscurePassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white38,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscurePassword = !_obscurePassword),
-                      ),
-                      validator: (v) =>
-                          v!.length < 8 ? 'Password must be at least 8 characters' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _field(
-                      _confirmPasswordController,
-                      'Confirm Password',
-                      Icons.lock_outline_rounded,
-                      obscureText: _obscureConfirm,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white38,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscureConfirm = !_obscureConfirm),
-                      ),
-                      validator: (v) => v != _passwordController.text
-                          ? 'Passwords do not match'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _field(_phoneController, 'Phone Number', Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        validator: (v) => v!.isEmpty ? 'Phone is required' : null),
-                    const SizedBox(height: 14),
-                    _field(_addressController, 'Address (optional)',
-                        Icons.location_on_outlined),
-                    const SizedBox(height: 32),
-                    Consumer<AuthProvider>(
-                      builder: (_, auth, __) => SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: auth.state == AuthState.loading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF6B35),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: auth.state == AuthState.loading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2)
-                              : const Text(
-                                  'Create Restaurant',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                  Expanded(
+                    flex: 1,
+                    child: _buildImageGrid(),
+                  ),
+                ],
+              );
+            } else {
+              return Center(child: _buildForm(context));
+            }
+          },
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 
-  Widget _field(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
+  Widget _buildImageGrid() {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+        ),
+        itemCount: _foodImages.length,
+        itemBuilder: (context, index) {
+          return Image.network(
+            _foodImages[index],
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const Center(child: Icon(Icons.restaurant)),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            // Logo
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: theme.primaryColor,
+                borderRadius: AppRadius.borderMedium,
+              ),
+              child: const Icon(Icons.restaurant, color: Colors.white, size: 28),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Create Account',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Already have an account? ",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  ),
+                  child: Text(
+                    'Sign In',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.primaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Business Type', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.inputDecorationTheme.fillColor,
+                      borderRadius: AppRadius.borderMedium,
+                      border: Border.all(color: theme.dividerColor),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _businessType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down),
+                        items: const [
+                          DropdownMenuItem(value: 'restaurant', child: Text('Restaurant')),
+                          DropdownMenuItem(value: 'food_truck', child: Text('Food Truck')),
+                          DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setState(() => _businessType = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Full Name', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _nameController,
+                    hint: 'Type your full name',
+                    icon: Icons.person_outline,
+                    validator: (v) => v!.isEmpty ? 'Name required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Business Name', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _restaurantNameController,
+                    hint: 'Type your business name',
+                    icon: Icons.storefront_outlined,
+                    validator: (v) => v!.isEmpty ? 'Business name required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Email', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: 'Type your email address',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Email is required';
+                      if (!v.contains('@')) return 'Enter a valid email';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Password', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _passwordController,
+                    hint: 'Type your password',
+                    icon: Icons.lock_outline,
+                    obscureText: _obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        color: theme.iconTheme.color?.withOpacity(0.5),
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Password is required';
+                      if (v.length < 6) return 'Password must be at least 6 characters';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 40),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: auth.state == AuthState.loading ? null : _register,
+                          child: auth.state == AuthState.loading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Sign Up'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -259,26 +306,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-        prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 20),
         suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.06),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 1.5),
-        ),
       ),
       validator: validator,
     );

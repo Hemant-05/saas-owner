@@ -129,11 +129,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final theme = Theme.of(context);
 
     return Scaffold(
       key: HomeScreen.scaffoldKey,
-      backgroundColor: AppColors.background,
-      drawer: _buildDrawer(context),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: isDesktop ? null : _buildDrawer(context),
+      bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(context),
       body: Column(
         children: [
           const _OfflineSyncBanner(),
@@ -151,13 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDesktopLayout(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final restaurant = auth.restaurant;
+    final theme = Theme.of(context);
 
     return Row(
       children: [
         // Permanent sidebar
         Container(
           width: 220,
-          color: AppColors.surfaceElevated,
+          color: theme.colorScheme.surface,
           child: Column(
             children: [
               const SizedBox(height: AppSpacing.xl),
@@ -334,11 +337,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ─── Mobile: drawer ───────────────────────────────────────────────────────────
+  // ─── Mobile: Bottom Nav ────────────────────────────────────────────────────────
   Widget _buildMobileLayout(BuildContext context) {
     return IndexedStack(
       index: _currentIndex,
       children: _tabs,
+    );
+  }
+
+  Widget _buildBottomNavBar(BuildContext context) {
+    final theme = Theme.of(context);
+    return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      onTap: _navigate,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
+      unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor,
+      backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
+      items: _kNavItems.map((item) {
+        return BottomNavigationBarItem(
+          icon: Icon(item.icon),
+          label: item.label,
+        );
+      }).toList(),
     );
   }
 

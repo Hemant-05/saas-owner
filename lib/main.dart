@@ -9,6 +9,7 @@ import 'providers/menu_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/inventory_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'services/offline_sync_service.dart';
@@ -66,14 +67,20 @@ class QRCafeOwnerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => InventoryProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'QR Cafe — Owner',
-        debugShowCheckedModeBanner: false,
-        // Use the centralized dark theme from app_theme.dart
-        theme: AppTheme.darkTheme,
-        scrollBehavior: AppScrollBehavior(),
-        home: const SplashScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'QR Cafe — Owner',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            scrollBehavior: AppScrollBehavior(),
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
