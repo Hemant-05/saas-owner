@@ -45,6 +45,15 @@ class AppColors {
   static const Color borderDark = Color(0xFF2A2A3E);
   static const Color borderLight = Color(0xFFE5E7EB);
   
+  // Legacy / Backward Compatible aliases (defaults to Dark Mode)
+  static const Color background = backgroundDark;
+  static const Color surface = surfaceDark;
+  static const Color surfaceElevated = surfaceElevatedDark;
+  static const Color textPrimary = textPrimaryDark;
+  static const Color textSecondary = textSecondaryDark;
+  static const Color textMuted = textMutedDark;
+  static const Color border = borderDark;
+
   // Order status colors
   static const Color statusPlaced = Color(0xFF3B82F6);
   static const Color statusPreparing = Color(0xFFF59E0B);
@@ -274,4 +283,67 @@ class AppTheme {
       ),
     );
   }
+}
+
+class AppTextStyles {
+  AppTextStyles._();
+
+  static const TextStyle headingL = TextStyle(
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimaryDark,
+    letterSpacing: -0.5,
+  );
+
+  static const TextStyle headingM = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimaryDark,
+    letterSpacing: -0.3,
+  );
+
+  static const TextStyle headingS = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimaryDark,
+  );
+
+  static const TextStyle bodyL = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimaryDark,
+    height: 1.5,
+  );
+
+  static const TextStyle bodyM = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textPrimaryDark,
+    height: 1.5,
+  );
+
+  static const TextStyle bodyS = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textSecondaryDark,
+    height: 1.4,
+  );
+
+  static const TextStyle labelL = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimaryDark,
+  );
+
+  static const TextStyle labelM = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimaryDark,
+  );
+
+  static const TextStyle labelS = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textSecondaryDark,
+  );
 }

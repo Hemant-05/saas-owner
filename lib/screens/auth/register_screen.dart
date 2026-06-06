@@ -49,11 +49,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = context.read<AuthProvider>();
     
     await authProvider.register(
-      name: _nameController.text.trim(),
+      name: _restaurantNameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      restaurantName: _restaurantNameController.text.trim(),
-      businessType: _businessType,
+      phone: '0000000000', // Placeholder since phone was removed from UI
     );
 
     if (!mounted) return;

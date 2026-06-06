@@ -363,7 +363,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   break;
                               }
                               return SideTitleWidget(
-                                axisSide: meta.axisSide,
+                                meta: meta,
                                 child: Text(text,
                                     style: style.copyWith(
                                         color: theme.textTheme.bodyMedium?.color
