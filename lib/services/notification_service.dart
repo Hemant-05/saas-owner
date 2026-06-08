@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -83,6 +82,10 @@ class NotificationService {
 
   static const String _notificationsKey = 'app_notifications';
   static const int _maxNotifications = 50;
+  static const String _webPushVapidKey = String.fromEnvironment(
+    'FCM_WEB_VAPID_KEY',
+    defaultValue: '',
+  );
 
   // Android notification channel for high-priority order alerts
   static const AndroidNotificationChannel _orderChannel =
@@ -97,6 +100,8 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  String? _lastRestaurantAuthToken;
+  bool _tokenRefreshListenerAttached = false;
 
   // Callback for navigation when notification is tapped
   Function(String type, Map<String, String> data)? onNotificationTap;
@@ -110,7 +115,9 @@ class NotificationService {
   /// Must be called from main() after Firebase.initializeApp().
   Future<void> initialize() async {
     try {
-      if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux)) {
         debugPrint('[NotificationService] FCM not supported on Windows/Linux. Skipping init.');
         return;
       }
@@ -121,8 +128,9 @@ class NotificationService {
       // Request notification permissions (Android 13+ / iOS)
       await _requestPermissions();
 
-      // Set up the local notifications plugin
-      await _initLocalNotifications();
+      if (!kIsWeb) {
+        await _initLocalNotifications();
+      }
 
       // Set foreground notification presentation options (iOS)
       await FirebaseMessaging.instance
@@ -155,7 +163,7 @@ class NotificationService {
         '[NotificationService] Permission: ${settings.authorizationStatus}');
 
     // Android 13+ — local notifications also need permission
-    if (!kIsWeb && Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
@@ -269,6 +277,8 @@ class NotificationService {
     required String body,
     required Map<String, String> data,
   }) async {
+    if (kIsWeb) return;
+
     final androidDetails = AndroidNotificationDetails(
       _orderChannel.id,
       _orderChannel.name,
@@ -305,13 +315,16 @@ class NotificationService {
   /// Call this every time the app starts and the owner is logged in.
   Future<void> registerTokenForRestaurant(String authToken) async {
     try {
-      if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+      _lastRestaurantAuthToken = authToken;
+      _attachTokenRefreshListener();
+
+      if (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.windows ||
+              defaultTargetPlatform == TargetPlatform.linux)) {
         debugPrint('[NotificationService] Skipping token registration on Windows/Linux.');
         return;
       }
-      final fcmToken = await FirebaseMessaging.instance.getToken(
-  vapidKey: '0wqglRYLdebz4nDLL99Gh5QbkK0hHv-Wyk6X0a_hmtY',
-);
+      final fcmToken = await _getFcmToken();
       if (fcmToken == null) {
         debugPrint('[NotificationService] FCM token is null — skipping registration.');
         return;
@@ -326,7 +339,7 @@ class NotificationService {
         },
         body: jsonEncode({
           'fcmToken': fcmToken,
-          'platform': kIsWeb ? 'web' : (Platform.isIOS ? 'ios' : 'android'),
+          'platform': _platformName,
         }),
       );
 
@@ -341,6 +354,29 @@ class NotificationService {
   }
 
   // ─── Local Notification Storage ───────────────────────────────────────────
+
+  Future<String?> _getFcmToken() {
+    if (kIsWeb && _webPushVapidKey.isNotEmpty) {
+      return FirebaseMessaging.instance.getToken(vapidKey: _webPushVapidKey);
+    }
+    return FirebaseMessaging.instance.getToken();
+  }
+
+  void _attachTokenRefreshListener() {
+    if (_tokenRefreshListenerAttached) return;
+    _tokenRefreshListenerAttached = true;
+    FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+      final token = _lastRestaurantAuthToken;
+      if (token == null || token.isEmpty) return;
+      registerTokenForRestaurant(token);
+    });
+  }
+
+  String get _platformName {
+    if (kIsWeb) return 'web';
+    if (defaultTargetPlatform == TargetPlatform.iOS) return 'ios';
+    return 'android';
+  }
 
   /// Store a notification in local SharedPreferences (max 50, FIFO).
   Future<void> storeNotification(AppNotification notification) async {

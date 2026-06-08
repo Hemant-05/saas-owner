@@ -405,6 +405,7 @@ class SnackBarHelper {
           ],
         ),
         duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(AppSpacing.md),
       ),
     );

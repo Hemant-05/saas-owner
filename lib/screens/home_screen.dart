@@ -5,6 +5,7 @@ import '../providers/order_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/table_provider.dart';
 import '../providers/inventory_provider.dart';
+import '../services/notification_service.dart';
 import '../services/offline_sync_service.dart';
 import '../theme/app_theme.dart';
 import 'orders/orders_tab.dart';
@@ -92,21 +93,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
-    Navigator.pop(context); // close drawer
+    final scaffold = HomeScreen.scaffoldKey.currentState;
+    if (scaffold?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+    }
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Logout',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.w700)),
         content: const Text('Are you sure you want to logout?',
-            style: TextStyle(color: Colors.white70)),
+            style: TextStyle(color: AppColors.textSecondaryLight)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -119,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (confirm == true && mounted) {
       await context.read<AuthProvider>().logout();
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
@@ -136,13 +142,40 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: isDesktop ? null : _buildDrawer(context),
       bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(context),
-      body: Column(
+      body: Stack(
         children: [
-          const _OfflineSyncBanner(),
-          Expanded(
-            child: isDesktop
-                ? _buildDesktopLayout(context)
-                : _buildMobileLayout(context),
+          Column(
+            children: [
+              const _OfflineSyncBanner(),
+              Expanded(
+                child: isDesktop
+                    ? _buildDesktopLayout(context)
+                    : _buildMobileLayout(context),
+              ),
+            ],
+          ),
+          // Sticky Notification Bell
+          Positioned(
+            top: isDesktop ? 24 : MediaQuery.of(context).padding.top + 16,
+            right: 24,
+            child: ValueListenableBuilder<int>(
+              valueListenable: NotificationService().unreadCount,
+              builder: (context, count, child) {
+                if (count == 0) return const SizedBox.shrink();
+                return FloatingActionButton(
+                  mini: true,
+                  backgroundColor: AppColors.surfaceElevated,
+                  elevation: 6,
+                  onPressed: () => _navigate(5),
+                  child: Badge(
+                    label: Text('$count'),
+                    backgroundColor: const Color(0xFFFF4757),
+                    child: const Icon(Icons.notifications_active_rounded,
+                        color: AppColors.accent),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -182,9 +215,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppColors.textPrimary, size: 18),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    const Text(
-                      'RestaurantOS',
-                      style: AppTextStyles.headingM,
+                    const Expanded(
+                      child: Text(
+                        'RestaurantOS',
+                        style: AppTextStyles.headingM,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -252,16 +288,18 @@ class _HomeScreenState extends State<HomeScreen> {
       context: ctx,
       position: RelativeRect.fromLTRB(offset.dx, offset.dy,
           offset.dx + box.size.width, offset.dy + box.size.height),
-      color: const Color(0xFF1A1A2E),
+      color: AppColors.surfaceLight,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       items: [
         PopupMenuItem(
           onTap: () => _openProfile(ctx),
           child: const Row(
             children: [
-              Icon(Icons.person_rounded, color: Colors.white54, size: 16),
+              Icon(Icons.person_rounded,
+                  color: AppColors.textSecondaryLight, size: 16),
               SizedBox(width: 8),
-              Text('Profile', style: TextStyle(color: Colors.white)),
+              Text('Profile',
+                  style: TextStyle(color: AppColors.textPrimaryLight)),
             ],
           ),
         ),
@@ -288,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 480,
           constraints: const BoxConstraints(maxHeight: 700),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D0D1A),
+            color: AppColors.backgroundLight,
             borderRadius: BorderRadius.circular(20),
           ),
           clipBehavior: Clip.antiAlias,
@@ -320,14 +358,25 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 icon,
-                color: isActive ? AppColors.accent : AppColors.textMuted,
+                color: isActive
+                    ? AppColors.accent
+                    : AppColors.textSecondaryLight,
                 size: 20,
               ),
+              if (index == 5)
+                ValueListenableBuilder<int>(
+                  valueListenable: NotificationService().unreadCount,
+                  builder: (_, count, child) =>
+                      count > 0 ? _NavUnreadDot(count: count) : child!,
+                  child: const SizedBox.shrink(),
+                ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 label,
                 style: AppTextStyles.labelM.copyWith(
-                  color: isActive ? AppColors.accent : AppColors.textSecondary,
+                  color: isActive
+                      ? AppColors.accent
+                      : AppColors.textSecondaryLight,
                 ),
               ),
             ],
@@ -459,10 +508,26 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _drawerNavItem(int index, IconData icon, String label) {
     final isActive = _currentIndex == index;
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isActive ? AppColors.accent : AppColors.textSecondary,
-        size: 20,
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            icon,
+            color: isActive ? AppColors.accent : AppColors.textSecondaryLight,
+            size: 20,
+          ),
+          if (index == 5)
+            Positioned(
+              right: -8,
+              top: -6,
+              child: ValueListenableBuilder<int>(
+                valueListenable: NotificationService().unreadCount,
+                builder: (_, count, child) =>
+                    count > 0 ? _NavUnreadDot(count: count) : child!,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+        ],
       ),
       title: Text(
         label,
@@ -475,6 +540,34 @@ class _HomeScreenState extends State<HomeScreen> {
           : Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMedium),
       onTap: () => _navigate(index),
+    );
+  }
+}
+
+class _NavUnreadDot extends StatelessWidget {
+  final int count;
+
+  const _NavUnreadDot({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: AppRadius.borderFull,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        count > 9 ? '9+' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          height: 1,
+        ),
+      ),
     );
   }
 }

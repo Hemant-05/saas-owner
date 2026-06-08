@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:typed_data';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 import '../auth/login_screen.dart';
 
 class ProfileTab extends StatefulWidget {
@@ -87,16 +88,19 @@ class _ProfileTabState extends State<ProfileTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Logout',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.w700)),
         content: const Text('Are you sure you want to logout?',
-            style: TextStyle(color: Colors.white70)),
+            style: TextStyle(color: AppColors.textSecondaryLight)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -108,7 +112,7 @@ class _ProfileTabState extends State<ProfileTab> {
     );
     if (confirm == true && mounted) {
       await context.read<AuthProvider>().logout();
-      Navigator.of(context).pushAndRemoveUntil(
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
@@ -121,7 +125,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final restaurant = auth.restaurant;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -135,7 +139,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                     ),
                   ),
                   const Spacer(),
@@ -209,14 +213,15 @@ class _ProfileTabState extends State<ProfileTab> {
                 Text(
                   restaurant?.name ?? '',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
                   restaurant?.email ?? '',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+                  style: const TextStyle(
+                      color: AppColors.textSecondaryLight, fontSize: 14),
                 ),
               ],
               const SizedBox(height: 24),
@@ -224,9 +229,9 @@ class _ProfileTabState extends State<ProfileTab> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
+                  color: AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: AppColors.borderLight),
                 ),
                 child: _isEditing
                     ? Column(
@@ -243,13 +248,13 @@ class _ProfileTabState extends State<ProfileTab> {
                     : Column(
                         children: [
                           _profileRow(Icons.store_rounded, 'Restaurant', restaurant?.name ?? ''),
-                          const Divider(color: Colors.white10, height: 20),
+                          const Divider(color: AppColors.borderLight, height: 20),
                           _profileRow(Icons.email_outlined, 'Email', restaurant?.email ?? ''),
-                          const Divider(color: Colors.white10, height: 20),
+                          const Divider(color: AppColors.borderLight, height: 20),
                           _profileRow(Icons.phone_outlined, 'Phone', restaurant?.phone ?? ''),
                           if (restaurant?.address != null &&
                               restaurant!.address!.isNotEmpty) ...[
-                            const Divider(color: Colors.white10, height: 20),
+                            const Divider(color: AppColors.borderLight, height: 20),
                             _profileRow(
                                 Icons.location_on_outlined, 'Address', restaurant.address!),
                           ],
@@ -264,8 +269,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       child: OutlinedButton(
                         onPressed: () => setState(() => _isEditing = false),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white54,
-                          side: BorderSide(color: Colors.white.withOpacity(0.15)),
+                          foregroundColor: AppColors.textSecondaryLight,
+                          side: const BorderSide(color: AppColors.borderLight),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -345,12 +350,12 @@ class _ProfileTabState extends State<ProfileTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: TextStyle(
-                      color: Colors.white.withOpacity(0.4), fontSize: 11)),
+                  style: const TextStyle(
+                      color: AppColors.textMutedLight, fontSize: 11)),
               const SizedBox(height: 2),
               Text(value,
                   style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontSize: 14,
                       fontWeight: FontWeight.w500)),
             ],
@@ -369,20 +374,21 @@ class _ProfileTabState extends State<ProfileTab> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppColors.textPrimaryLight),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: Icon(icon, color: Colors.white38, size: 18),
+          labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
+          prefixIcon:
+              Icon(icon, color: AppColors.textSecondaryLight, size: 18),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.06),
+          fillColor: AppColors.surfaceLight,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+            borderSide: const BorderSide(color: AppColors.borderLight),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+            borderSide: const BorderSide(color: AppColors.borderLight),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

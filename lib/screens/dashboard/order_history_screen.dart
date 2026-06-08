@@ -88,6 +88,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               subtitle: 'Completed orders will appear here',
             );
           }
+          
+          // Automatically select the first order if none is selected
+          if (_selectedOrder == null && provider.orderHistory.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _selectedOrder == null) {
+                setState(() => _selectedOrder = provider.orderHistory.first);
+              }
+            });
+          }
 
           if (isDesktop) {
             return _buildDesktopLayout(context, provider);
@@ -160,6 +169,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     : ClipRRect(
                         borderRadius: AppRadius.borderLarge,
                         child: OrderDetailScreen(
+                          key: ValueKey(_selectedOrder!.id),
                           orderId: _selectedOrder!.id,
                           order: _selectedOrder!,
                           isEmbedded: true,

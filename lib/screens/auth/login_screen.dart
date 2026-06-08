@@ -18,17 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  final List<String> _foodImages = [
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
-    'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
-    'https://images.unsplash.com/photo-1484723091791-c11756247fb2?w=500&q=80',
-    'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=500&q=80',
-    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=500&q=80',
-    'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=500&q=80',
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80',
-    'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=500&q=80',
-  ];
+  final String _coverImage =
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&q=80';
 
   @override
   void dispose() {
@@ -71,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildImageGrid(),
+                    child: _buildCoverImage(),
                   ),
                 ],
               );
@@ -84,25 +75,16 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildImageGrid() {
+  Widget _buildCoverImage() {
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 2,
-          mainAxisSpacing: 2,
-        ),
-        itemCount: _foodImages.length,
-        itemBuilder: (context, index) {
-          return Image.network(
-            _foodImages[index],
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                const Center(child: Icon(Icons.restaurant)),
-          );
-        },
+      width: double.infinity,
+      height: double.infinity,
+      child: Image.network(
+        _coverImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            const Center(child: Icon(Icons.restaurant, size: 64, color: Colors.grey)),
       ),
     );
   }
@@ -223,31 +205,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  if (isWeb) ...[
-                    // Demo credentials hint for testing
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: AppRadius.borderMedium,
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            '🎯 Demo Credentials',
-                            style: theme.textTheme.labelMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Email: demo@cafe.com\nPassword: demo1234',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ]
                 ],
               ),
             ),

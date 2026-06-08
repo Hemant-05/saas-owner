@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'auth/login_screen.dart';
 
@@ -60,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.background,
       body: Center(
         child: AnimatedBuilder(
           animation: _animController,
@@ -77,14 +78,14 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 100,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFF6B35), Color(0xFFFF9A3C)],
+                          colors: [AppColors.accent, Color(0xFFFF9A3C)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFF6B35).withOpacity(0.4),
+                            color: AppColors.accent.withOpacity(0.3),
                             blurRadius: 30,
                             spreadRadius: 5,
                           ),
@@ -98,22 +99,22 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'QR Cafe',
+                      'RestaurantOS',
                       style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: AppColors.textPrimary,
                         letterSpacing: -1,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Restaurant Owner',
+                    const Text(
+                      'Management Dashboard',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.5),
+                        color: AppColors.textSecondary,
                         letterSpacing: 2,
-                        fontWeight: FontWeight.w300,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 60),
@@ -122,7 +123,7 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 40,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: const Color(0xFFFF6B35).withOpacity(0.7),
+                        color: AppColors.accent,
                       ),
                     ),
                   ],

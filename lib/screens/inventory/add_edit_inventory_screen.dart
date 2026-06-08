@@ -1,6 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/inventory_models.dart';
@@ -28,6 +27,7 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
   String _selectedUnit = 'kg';
   bool _isCustomUnit = false;
   XFile? _imageFile;
+  Uint8List? _imagePreviewBytes;
   bool _isLoading = false;
 
   bool get _isEdit => widget.item != null;
@@ -82,7 +82,11 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
       imageQuality: 80,
     );
     if (picked != null) {
-      setState(() => _imageFile = picked);
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _imageFile = picked;
+        _imagePreviewBytes = bytes;
+      });
     }
   }
 
@@ -92,7 +96,8 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
     setState(() => _isLoading = true);
 
     final provider = context.read<InventoryProvider>();
-    final unit = _isCustomUnit ? _customUnitController.text.trim() : _selectedUnit;
+    final unit =
+        _isCustomUnit ? _customUnitController.text.trim() : _selectedUnit;
 
     String? error;
     if (_isEdit) {
@@ -273,7 +278,10 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: AppRadius.borderLarge,
-                    child: kIsWeb ? Image.network(_imageFile!.path, fit: BoxFit.cover) : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
+                    child: Image.memory(
+                      _imagePreviewBytes!,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     top: AppSpacing.sm,

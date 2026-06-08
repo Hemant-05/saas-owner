@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -67,8 +66,6 @@ class ApiService {
       return _parseResponse(response);
     } on TimeoutException {
       throw ApiException('Connection unavailable', 0);
-    } on SocketException {
-      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -91,8 +88,6 @@ class ApiService {
           .timeout(_requestTimeout);
       return _parseResponse(response);
     } on TimeoutException {
-      throw ApiException('Connection unavailable', 0);
-    } on SocketException {
       throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
@@ -117,8 +112,6 @@ class ApiService {
       return _parseResponse(response);
     } on TimeoutException {
       throw ApiException('Connection unavailable', 0);
-    } on SocketException {
-      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -134,8 +127,6 @@ class ApiService {
           .timeout(_requestTimeout);
       return _parseResponse(response);
     } on TimeoutException {
-      throw ApiException('Connection unavailable', 0);
-    } on SocketException {
       throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
@@ -174,8 +165,6 @@ class ApiService {
       return _parseResponse(response);
     } on TimeoutException {
       throw ApiException('Connection unavailable', 0);
-    } on SocketException {
-      throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;
     } catch (e) {
@@ -212,8 +201,6 @@ class ApiService {
       final response = await http.Response.fromStream(streamedResponse);
       return _parseResponse(response);
     } on TimeoutException {
-      throw ApiException('Connection unavailable', 0);
-    } on SocketException {
       throw ApiException('Connection unavailable', 0);
     } on ApiException {
       rethrow;

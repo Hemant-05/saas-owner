@@ -138,25 +138,25 @@ class _DashboardTabState extends State<DashboardTab> {
                               child: _statCard(
                                   'Earnings',
                                   '₹${provider.todayEarnings.toStringAsFixed(0)}',
-                                  Icons.payments_rounded,
+                                  Icons.account_balance_wallet_rounded,
                                   theme.primaryColor,
-                                  theme)),
+                                  theme, subtitle: '+12% Today')),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
                                   'Orders',
                                   '${provider.todayOrders}',
                                   Icons.receipt_long_rounded,
-                                  AppColors.success,
-                                  theme)),
+                                  theme.primaryColor,
+                                  theme, subtitle: '8 In Progress', subtitleColor: AppColors.warning)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
                                   'Avg Order',
                                   '₹${provider.todayAvgOrderValue.toStringAsFixed(0)}',
                                   Icons.analytics_rounded,
-                                  AppColors.info,
-                                  theme)),
+                                  theme.primaryColor,
+                                  theme, subtitle: 'Stable', subtitleColor: AppColors.textMuted)),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -171,7 +171,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   'Total Earnings',
                                   '₹${provider.totalEarnings.toStringAsFixed(0)}',
                                   Icons.account_balance_wallet_rounded,
-                                  Colors.orange,
+                                  AppColors.textSecondary,
                                   theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
@@ -179,7 +179,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   'Total Orders',
                                   '${provider.totalOrders}',
                                   Icons.bar_chart_rounded,
-                                  Colors.purple,
+                                  AppColors.textSecondary,
                                   theme)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
@@ -187,7 +187,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   'Avg Value',
                                   '₹${provider.avgOrderValue.toStringAsFixed(0)}',
                                   Icons.trending_up_rounded,
-                                  Colors.pink,
+                                  AppColors.textSecondary,
                                   theme)),
                         ],
                       ),
@@ -224,17 +224,17 @@ class _DashboardTabState extends State<DashboardTab> {
                   child: _statCard(
                       'Earnings',
                       '₹${provider.todayEarnings.toStringAsFixed(0)}',
-                      Icons.payments_rounded,
+                      Icons.account_balance_wallet_rounded,
                       theme.primaryColor,
-                      theme)),
+                      theme, subtitle: '+12%')),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                   child: _statCard(
                       'Orders',
                       '${provider.todayOrders}',
                       Icons.receipt_long_rounded,
-                      AppColors.success,
-                      theme)),
+                      theme.primaryColor,
+                      theme, subtitle: '8 Pending', subtitleColor: AppColors.warning)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -242,7 +242,7 @@ class _DashboardTabState extends State<DashboardTab> {
               'Avg Order Value',
               '₹${provider.todayAvgOrderValue.toStringAsFixed(0)}',
               Icons.analytics_rounded,
-              AppColors.info,
+              theme.primaryColor,
               theme),
           const SizedBox(height: AppSpacing.xl),
           _buildChartSection(theme, provider),
@@ -256,7 +256,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       'Total Earnings',
                       '₹${provider.totalEarnings.toStringAsFixed(0)}',
                       Icons.account_balance_wallet_rounded,
-                      Colors.orange,
+                      AppColors.textSecondary,
                       theme)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -264,7 +264,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       'Total Orders',
                       '${provider.totalOrders}',
                       Icons.bar_chart_rounded,
-                      Colors.purple,
+                      AppColors.textSecondary,
                       theme)),
             ],
           ),
@@ -273,7 +273,7 @@ class _DashboardTabState extends State<DashboardTab> {
               'Avg Value',
               '₹${provider.avgOrderValue.toStringAsFixed(0)}',
               Icons.trending_up_rounded,
-              Colors.pink,
+              AppColors.textSecondary,
               theme),
           const SizedBox(height: AppSpacing.xl),
           ElevatedButton.icon(
@@ -289,6 +289,30 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildChartSection(ThemeData theme, DashboardProvider provider) {
+    final now = DateTime.now();
+    final List<double> weeklyData = List.filled(7, 0.0);
+    
+    for (final order in provider.orderHistory) {
+      if (order.placedAt != null) {
+        final date = DateTime.parse(order.placedAt!).toLocal();
+        final difference = DateTime(now.year, now.month, now.day)
+            .difference(DateTime(date.year, date.month, date.day))
+            .inDays;
+        
+        if (difference >= 0 && difference < 7) {
+          final index = 6 - difference;
+          weeklyData[index] += order.totalAmount;
+        }
+      }
+    }
+    
+    if (provider.todayEarnings > weeklyData[6]) {
+      weeklyData[6] = provider.todayEarnings.toDouble();
+    }
+    
+    final currentMaxY = weeklyData.reduce((a, b) => a > b ? a : b);
+    final chartMaxY = currentMaxY > 0 ? (currentMaxY * 1.5).clamp(100.0, double.infinity) : 1000.0;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -302,11 +326,28 @@ class _DashboardTabState extends State<DashboardTab> {
         children: [
           Row(
             children: [
-              Icon(Icons.insights_rounded, color: theme.primaryColor),
-              const SizedBox(width: 8),
-              Text('Revenue Trend',
+              Text('Total Revenue',
                   style: theme.textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+                  borderRadius: AppRadius.borderMedium,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded, size: 14, color: theme.iconTheme.color?.withOpacity(0.5)),
+                    const SizedBox(width: 6),
+                    Text('This Week', style: theme.textTheme.bodySmall),
+                    const SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: theme.iconTheme.color?.withOpacity(0.5)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.arrow_outward_rounded, size: 18, color: theme.iconTheme.color?.withOpacity(0.5)),
             ],
           ),
           const SizedBox(height: 24),
@@ -318,8 +359,8 @@ class _DashboardTabState extends State<DashboardTab> {
                         style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5))),
                   )
-                : LineChart(
-                    LineChartData(
+                : BarChart(
+                    BarChartData(
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
@@ -327,6 +368,7 @@ class _DashboardTabState extends State<DashboardTab> {
                           return FlLine(
                             color: theme.dividerColor.withOpacity(0.1),
                             strokeWidth: 1,
+                            dashArray: [4, 4],
                           );
                         },
                       ),
@@ -340,22 +382,32 @@ class _DashboardTabState extends State<DashboardTab> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 30,
-                            interval: 1,
                             getTitlesWidget: (value, meta) {
                               const style = TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.bold);
                               String text;
-                              switch (value.toInt()) {
-                                case 1:
+                              final dayIndex = (now.weekday - 1 - (6 - value.toInt())) % 7;
+                              final adjustedIndex = dayIndex < 0 ? dayIndex + 7 : dayIndex;
+                              switch (adjustedIndex) {
+                                case 0:
                                   text = 'Mon';
                                   break;
-                                case 3:
+                                case 1:
+                                  text = 'Tue';
+                                  break;
+                                case 2:
                                   text = 'Wed';
                                   break;
-                                case 5:
+                                case 3:
+                                  text = 'Thu';
+                                  break;
+                                case 4:
                                   text = 'Fri';
                                   break;
-                                case 7:
+                                case 5:
+                                  text = 'Sat';
+                                  break;
+                                case 6:
                                   text = 'Sun';
                                   break;
                                 default:
@@ -366,48 +418,67 @@ class _DashboardTabState extends State<DashboardTab> {
                                 meta: meta,
                                 child: Text(text,
                                     style: style.copyWith(
-                                        color: theme.textTheme.bodyMedium?.color
+                                        color: value.toInt() == 6 ? theme.primaryColor : theme.textTheme.bodyMedium?.color
                                             ?.withOpacity(0.5))),
                               );
                             },
                           ),
                         ),
-                        leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              return SideTitleWidget(
+                                meta: meta,
+                                child: Text(
+                                  value == 0 ? '0' : '₹${value.toInt()}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.5),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       borderData: FlBorderData(show: false),
-                      minX: 1,
-                      maxX: 7,
-                      minY: 0,
-                      maxY: provider.todayEarnings > 0 ? provider.todayEarnings * 1.5 : 100,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: [
-                            const FlSpot(1, 150),
-                            const FlSpot(2, 200),
-                            const FlSpot(3, 100),
-                            const FlSpot(4, 300),
-                            const FlSpot(5, 250),
-                            const FlSpot(6, 400),
-                            FlSpot(7, provider.todayEarnings.toDouble()),
-                          ],
-                          isCurved: true,
-                          color: theme.primaryColor,
-                          barWidth: 4,
-                          isStrokeCapRound: true,
-                          dotData: const FlDotData(show: false),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: theme.primaryColor.withOpacity(0.15),
-                          ),
-                        ),
+                      maxY: chartMaxY,
+                      barGroups: [
+                        _buildBarGroup(0, weeklyData[0], false, theme, chartMaxY),
+                        _buildBarGroup(1, weeklyData[1], false, theme, chartMaxY),
+                        _buildBarGroup(2, weeklyData[2], false, theme, chartMaxY),
+                        _buildBarGroup(3, weeklyData[3], false, theme, chartMaxY),
+                        _buildBarGroup(4, weeklyData[4], false, theme, chartMaxY),
+                        _buildBarGroup(5, weeklyData[5], false, theme, chartMaxY),
+                        _buildBarGroup(6, weeklyData[6], true, theme, chartMaxY),
                       ],
                     ),
                   ),
           ),
         ],
       ),
+    );
+  }
+
+  BarChartGroupData _buildBarGroup(int x, double y, bool isToday, ThemeData theme, double maxY) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          color: isToday ? theme.primaryColor : AppColors.borderLight,
+          width: 40,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          backDrawRodData: BackgroundBarChartRodData(
+            show: true,
+            toY: maxY,
+            color: AppColors.backgroundLight.withOpacity(0.5),
+          ),
+        ),
+      ],
     );
   }
 
@@ -491,37 +562,55 @@ class _DashboardTabState extends State<DashboardTab> {
       );
 
   Widget _statCard(
-      String label, String value, IconData icon, Color color, ThemeData theme) {
+      String label, String value, IconData icon, Color color, ThemeData theme, {String? subtitle, Color? subtitleColor}) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: AppRadius.borderMedium,
+        borderRadius: AppRadius.borderLarge,
         border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
         boxShadow: AppShadows.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 24),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                label,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.arrow_outward_rounded, size: 16, color: theme.iconTheme.color?.withOpacity(0.3)),
+            ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7)),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: theme.textTheme.headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w800, color: theme.textTheme.bodyLarge?.color, letterSpacing: -1),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: subtitleColor ?? AppColors.success,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -499,8 +498,7 @@ class InventoryProvider with ChangeNotifier {
 
   bool _isNetworkFailure(Object error) {
     final message = error.toString().toLowerCase();
-    return error is SocketException ||
-        error is TimeoutException ||
+    return error is TimeoutException ||
         message.contains('connection') ||
         message.contains('timed out') ||
         message.contains('network');

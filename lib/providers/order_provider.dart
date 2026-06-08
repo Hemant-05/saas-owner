@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:audioplayers/audioplayers.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
@@ -46,6 +47,13 @@ class OrderProvider extends ChangeNotifier {
   }
 
   Future<void> _showNewOrderNotification(Order order) async {
+    try {
+      final player = AudioPlayer();
+      await player.play(UrlSource('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'));
+    } catch (e) {
+      debugPrint('Error playing sound: $e');
+    }
+
     // Delegate to the NotificationService singleton which owns the plugin
     await NotificationService().storeNotification(AppNotification(
       id: '${order.id}_${DateTime.now().millisecondsSinceEpoch}',

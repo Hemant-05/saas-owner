@@ -22,17 +22,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   String _businessType = 'restaurant';
 
-  final List<String> _foodImages = [
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
-    'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=500&q=80',
-    'https://images.unsplash.com/photo-1484723091791-c11756247fb2?w=500&q=80',
-    'https://images.unsplash.com/photo-1493770348161-369560ae357d?w=500&q=80',
-    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=500&q=80',
-    'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=500&q=80',
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80',
-    'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=500&q=80',
-  ];
+  final String _coverImage =
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&q=80';
 
   @override
   void dispose() {
@@ -86,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildImageGrid(),
+                    child: _buildCoverImage(),
                   ),
                 ],
               );
@@ -99,25 +90,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildImageGrid() {
+  Widget _buildCoverImage() {
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 2,
-          mainAxisSpacing: 2,
-        ),
-        itemCount: _foodImages.length,
-        itemBuilder: (context, index) {
-          return Image.network(
-            _foodImages[index],
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                const Center(child: Icon(Icons.restaurant)),
-          );
-        },
+      width: double.infinity,
+      height: double.infinity,
+      child: Image.network(
+        _coverImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            const Center(child: Icon(Icons.restaurant, size: 64, color: Colors.grey)),
       ),
     );
   }

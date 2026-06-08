@@ -256,7 +256,7 @@ class _TablesTabState extends State<TablesTab> {
                   ),
                   child: tableProv.tables.isEmpty
                       ? _emptyTablesState()
-                      : _buildTableList(context, tableProv),
+                      : _buildTableGrid(context, tableProv, isDesktop: true, showRightPanel: showRightPanel),
                 ),
               ),
               // ── Right: detail / add
@@ -280,7 +280,7 @@ class _TablesTabState extends State<TablesTab> {
         Expanded(
           child: tableProv.tables.isEmpty
               ? _emptyTablesState()
-              : _buildTableGrid(context, tableProv),
+              : _buildTableGrid(context, tableProv, isDesktop: false, showRightPanel: false),
         ),
       ],
     );
@@ -342,86 +342,39 @@ class _TablesTabState extends State<TablesTab> {
         child: Text(label, style: AppTextStyles.labelS.copyWith(color: color)),
       );
 
-  // ─── Left: list of tables (desktop)
-  Widget _buildTableList(BuildContext context, TableProvider tableProv) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: tableProv.tables.length,
-      itemBuilder: (_, idx) {
-        final table = tableProv.tables[idx];
-        final isSelected = _selectedTable?.id == table.id;
-        final statusColor = table.isOccupied ? AppColors.error : AppColors.success;
+  // ─── Desktop Table Grid replaces List
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: GestureDetector(
-            onTap: () => _selectTable(table),
-            child: AppCard(
-              color: isSelected ? AppColors.accent.withValues(alpha: 0.1) : AppColors.surface,
-              border: Border.all(
-                color: isSelected ? AppColors.accent : AppColors.border,
-                width: isSelected ? 1.5 : 0.5,
-              ),
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Row(
-                children: [
-                  // Status dot
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  // Table info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Table ${table.tableNumber}', style: AppTextStyles.labelM),
-                        Text(table.tableName, style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted)),
-                      ],
-                    ),
-                  ),
-                  // Status text
-                  Text(
-                    table.isOccupied ? 'Occupied' : 'Free',
-                    style: AppTextStyles.labelS.copyWith(color: statusColor),
-                  ),
-                  if (!table.isServiceable) ...[
-                    const SizedBox(width: AppSpacing.xs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text('OFF',
-                          style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.w800)),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // ─── Grid (mobile & desktop)
+  Widget _buildTableGrid(BuildContext context, TableProvider tableProv, {required bool isDesktop, required bool showRightPanel}) {
+    int crossAxisCount = isDesktop ? (showRightPanel ? 3 : 5) : 2;
 
-  // ─── Grid (mobile)
-  Widget _buildTableGrid(BuildContext context, TableProvider tableProv) {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.80,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisSpacing: AppSpacing.md,
+        childAspectRatio: 0.85,
       ),
       itemCount: tableProv.tables.length,
       itemBuilder: (_, idx) {
         final table = tableProv.tables[idx];
-        return _MobileTableCard(table: table);
+        final isSelected = _selectedTable?.id == table.id;
+        return _MobileTableCard(
+          table: table, 
+          isSelected: isSelected,
+          onTap: () {
+            if (isDesktop) {
+              _selectTable(table);
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => TableDetailScreen(table: table)),
+              );
+            }
+          },
+        );
       },
     );
   }
@@ -577,10 +530,17 @@ class _TablesTabState extends State<TablesTab> {
       );
 }
 
-// ─── Mobile Table Card ────────────────────────────────────────────────────────
+// ─── Table Card ────────────────────────────────────────────────────────
 class _MobileTableCard extends StatelessWidget {
   final TableModel table;
-  const _MobileTableCard({required this.table});
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _MobileTableCard({
+    required this.table,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -593,16 +553,16 @@ class _MobileTableCard extends StatelessWidget {
         final statusColor = currentTable.isOccupied ? AppColors.error : AppColors.success;
 
         return GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => TableDetailScreen(table: currentTable)),
-          ),
+          onTap: onTap,
           child: AppCard(
-            color: AppColors.surface,
+            color: isSelected ? AppColors.accent.withValues(alpha: 0.05) : AppColors.surface,
             border: Border.all(
-                color: statusColor.withValues(alpha: currentTable.isOccupied ? 0.35 : 0.12)),
-            padding: const EdgeInsets.all(AppSpacing.sm),
+                color: isSelected 
+                    ? AppColors.accent 
+                    : statusColor.withValues(alpha: currentTable.isOccupied ? 0.35 : 0.12),
+                width: isSelected ? 2.0 : 1.0,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               children: [
                 Row(

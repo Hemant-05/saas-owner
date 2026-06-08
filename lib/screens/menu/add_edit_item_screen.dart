@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:typed_data';
 import '../../providers/menu_provider.dart';
 import '../../models/models.dart';
+import '../../theme/app_theme.dart';
 
 const List<String> kCategories = [
   'Beverages',
@@ -25,21 +26,21 @@ class AddEditItemScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D1A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12121F),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           item != null ? 'Edit Item' : 'Add Menu Item',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: Colors.white.withOpacity(0.06)),
+          child: Container(height: 1, color: AppColors.surface),
         ),
       ),
       body: AddEditItemPanel(
@@ -197,7 +198,7 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isEditing ? 'Item updated!' : 'Item added!'),
-          backgroundColor: const Color(0xFF06D6A0),
+          backgroundColor: AppColors.success,
         ),
       );
       widget.onSaved?.call();
@@ -205,7 +206,7 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(menuProv.errorMessage ?? 'Failed to save item'),
-          backgroundColor: const Color(0xFFFF4757),
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -215,23 +216,23 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: AppColors.surfaceElevated,
         title: const Text('Delete Item',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
         content: Text(
           'Remove "${widget.item!.name}" from the menu?',
-          style: const TextStyle(color: Colors.white70),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF4757)),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                backgroundColor: AppColors.error),
+            child: const Text('Delete', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
       ),
@@ -259,9 +260,9 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
                 height: 180,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withOpacity(0.06),
+                  color: AppColors.surface,
                   border: Border.all(
-                    color: const Color(0xFFFF6B35).withOpacity(0.3),
+                    color: AppColors.accent.withOpacity(0.3),
                   ),
                 ),
                 child: ClipRRect(
@@ -303,8 +304,8 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
             _label('Category'),
             DropdownButtonFormField<String>(
               initialValue: _selectedCategory,
-              dropdownColor: const Color(0xFF1A1A2E),
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: AppColors.surfaceElevated,
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: _inputDecoration('Select category'),
               items: kCategories
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -316,10 +317,10 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
               _textField(_customCategoryCtrl, 'Enter custom category name'),
             ],
             const SizedBox(height: 18),
-            _toggleRow('Vegetarian', _isVeg, const Color(0xFF06D6A0),
+            _toggleRow('Vegetarian', _isVeg, AppColors.success,
                 (val) => setState(() => _isVeg = val)),
             const SizedBox(height: 10),
-            _toggleRow('Available on Menu', _isAvailable, const Color(0xFFFF6B35),
+            _toggleRow('Available on Menu', _isAvailable, AppColors.accent,
                 (val) => setState(() => _isAvailable = val)),
             const SizedBox(height: 24),
             // Save button
@@ -329,19 +330,19 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6B35),
+                  backgroundColor: AppColors.accent,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2)
+                        color: AppColors.textPrimary, strokeWidth: 2)
                     : Text(
                         isEditing ? 'Save Changes' : 'Add to Menu',
                         style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white),
+                            color: AppColors.textPrimary),
                       ),
               ),
             ),
@@ -355,8 +356,8 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
                   icon: const Icon(Icons.delete_rounded, size: 16),
                   label: const Text('Delete Item'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF4757),
-                    side: const BorderSide(color: Color(0xFFFF4757)),
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
@@ -370,15 +371,15 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
     );
   }
 
-  Widget _imgPlaceholder() => Column(
+  Widget _imgPlaceholder() => const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.add_photo_alternate_rounded,
-              size: 36, color: Colors.white.withOpacity(0.3)),
-          const SizedBox(height: 8),
+              size: 36, color: AppColors.textMuted),
+          SizedBox(height: 8),
           Text('Tap to add photo',
               style:
-                  TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13)),
+                  TextStyle(color: AppColors.textMuted, fontSize: 13)),
         ],
       );
 
@@ -386,7 +387,7 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
         padding: const EdgeInsets.only(bottom: 6),
         child: Text(text,
             style: const TextStyle(
-                color: Colors.white70,
+                color: AppColors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600)),
       );
@@ -402,34 +403,34 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppColors.textPrimary),
         decoration: _inputDecoration(hint),
         validator: validator,
       );
 
   InputDecoration _inputDecoration(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+        hintStyle: const TextStyle(color: AppColors.textMuted),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.06),
+        fillColor: AppColors.surface,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 1.5),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide:
-              const BorderSide(color: Color(0xFFFF4757), width: 1.5),
+              const BorderSide(color: AppColors.error, width: 1.5),
         ),
       );
 
@@ -438,9 +439,9 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -448,14 +449,14 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: value ? color : Colors.white24,
+                color: value ? color : AppColors.border,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 10),
             Text(label,
                 style:
-                    const TextStyle(color: Colors.white70, fontSize: 13)),
+                    const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             const Spacer(),
             Switch(
               value: value,
@@ -463,7 +464,7 @@ class _AddEditItemPanelState extends State<AddEditItemPanel> {
               activeThumbColor: color,
               activeTrackColor: color.withOpacity(0.3),
               inactiveThumbColor: Colors.white38,
-              inactiveTrackColor: Colors.white12,
+              inactiveTrackColor: AppColors.borderLight,
             ),
           ],
         ),
