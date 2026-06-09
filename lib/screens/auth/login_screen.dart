@@ -18,9 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  final String _coverImage =
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&q=80';
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -51,45 +48,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth > 800) {
-              return Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Center(child: _buildForm(context, isWeb: true)),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: _buildCoverImage(),
-                  ),
-                ],
-              );
-            } else {
-              return Center(child: _buildForm(context, isWeb: false));
-            }
-          },
-        ),
+        child: Center(child: _buildForm(context)),
       ),
     );
   }
 
-  Widget _buildCoverImage() {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      width: double.infinity,
-      height: double.infinity,
-      child: Image.network(
-        _coverImage,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const Center(child: Icon(Icons.restaurant, size: 64, color: Colors.grey)),
-      ),
-    );
-  }
-
-  Widget _buildForm(BuildContext context, {required bool isWeb}) {
+  Widget _buildForm(BuildContext context) {
     final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -182,7 +146,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        _showForgotPasswordDialog(context);
+                      },
+                      child: Text(
+                        'Forgot Password?',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   Consumer<AuthProvider>(
                     builder: (context, auth, _) {
                       return SizedBox(
@@ -233,6 +213,68 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffixIcon,
       ),
       validator: validator,
+    );
+  }
+
+  void _showForgotPasswordDialog(BuildContext context) {
+    final emailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your email address to receive a password reset link.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                hintText: 'Email address',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (emailController.text.isEmpty || !emailController.text.contains('@')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a valid email address')),
+                );
+                return;
+              }
+              final authProv = context.read<AuthProvider>();
+              final success = await authProv.forgotPassword(emailController.text.trim());
+              if (!context.mounted) return;
+              Navigator.pop(ctx);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Password reset link sent to your email.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(authProv.errorMessage ?? 'Failed to send reset link'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
     );
   }
 }

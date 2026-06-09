@@ -6,7 +6,7 @@ import '../models/models.dart';
 
 class PdfPrinterUtil {
   /// Generate and print a receipt for an order
-  static Future<void> printReceipt(Order order, {String? restaurantName}) async {
+  static Future<void> printReceipt(Order order, {String? restaurantName, String? restaurantPhone, String? restaurantGstNumber}) async {
     final pdf = pw.Document();
 
     // 80mm thermal receipt width is typically around 58mm to 80mm.
@@ -19,7 +19,7 @@ class PdfPrinterUtil {
       pw.Page(
         pageFormat: pageFormat,
         build: (pw.Context context) {
-          return _buildReceiptContent(order, restaurantName ?? 'QR Cafe');
+          return _buildReceiptContent(order, restaurantName ?? 'QR Cafe', restaurantPhone, restaurantGstNumber);
         },
       ),
     );
@@ -30,7 +30,7 @@ class PdfPrinterUtil {
     );
   }
 
-  static pw.Widget _buildReceiptContent(Order order, String restaurantName) {
+  static pw.Widget _buildReceiptContent(Order order, String restaurantName, String? restaurantPhone, String? restaurantGstNumber) {
     final dateFormat = DateFormat('dd MMM yyyy, hh:mm a');
     final String dateString = order.placedAt != null 
         ? dateFormat.format(DateTime.parse(order.placedAt!).toLocal()) 
@@ -49,6 +49,18 @@ class PdfPrinterUtil {
             textAlign: pw.TextAlign.center,
           ),
         ),
+        if (restaurantPhone != null && restaurantPhone.isNotEmpty) ...[
+          pw.SizedBox(height: 2),
+          pw.Center(
+            child: pw.Text('Ph: $restaurantPhone', style: const pw.TextStyle(fontSize: 10)),
+          ),
+        ],
+        if (restaurantGstNumber != null && restaurantGstNumber.isNotEmpty) ...[
+          pw.SizedBox(height: 2),
+          pw.Center(
+            child: pw.Text('GST: $restaurantGstNumber', style: const pw.TextStyle(fontSize: 10)),
+          ),
+        ],
         pw.SizedBox(height: 10),
         pw.Center(
           child: pw.Text(

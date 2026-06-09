@@ -152,10 +152,13 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
       ),
       body: LoadingOverlay(
         isLoading: _isLoading,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Form(
-            key: _formKey,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Form(
+                key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -252,6 +255,8 @@ class _AddEditInventoryScreenState extends State<AddEditInventoryScreen> {
             ),
           ),
         ),
+      ),
+    ),
       ),
     );
   }

@@ -4,6 +4,7 @@ class Restaurant {
   final String email;
   final String phone;
   final String? address;
+  final String? gstNumber;
   final String? logoUrl;
   final bool isActive;
   final String? createdAt;
@@ -14,6 +15,7 @@ class Restaurant {
     required this.email,
     required this.phone,
     this.address,
+    this.gstNumber,
     this.logoUrl,
     required this.isActive,
     this.createdAt,
@@ -26,6 +28,7 @@ class Restaurant {
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
       address: json['address'],
+      gstNumber: json['gstNumber'],
       logoUrl: json['logoUrl'],
       isActive: json['isActive'] ?? true,
       createdAt: json['createdAt'],
@@ -38,6 +41,7 @@ class Restaurant {
         'email': email,
         'phone': phone,
         'address': address,
+        'gstNumber': gstNumber,
         'logoUrl': logoUrl,
         'isActive': isActive,
         'createdAt': createdAt,
@@ -344,6 +348,8 @@ class Bill {
   final String orderId;
   final String restaurantName;
   final String? restaurantLogoUrl;
+  final String? restaurantPhone;
+  final String? restaurantGstNumber;
   final int tableNumber;
   final String tableName;
   final String orderNumber;
@@ -361,6 +367,8 @@ class Bill {
     required this.orderId,
     required this.restaurantName,
     this.restaurantLogoUrl,
+    this.restaurantPhone,
+    this.restaurantGstNumber,
     required this.tableNumber,
     required this.tableName,
     required this.orderNumber,
@@ -380,6 +388,8 @@ class Bill {
       orderId: json['orderId'] ?? '',
       restaurantName: json['restaurantName'] ?? '',
       restaurantLogoUrl: json['restaurantLogoUrl'],
+      restaurantPhone: json['restaurantPhone'],
+      restaurantGstNumber: json['restaurantGstNumber'],
       tableNumber: (json['tableNumber'] as num?)?.toInt() ?? 0,
       tableName: json['tableName'] ?? '',
       orderNumber: json['orderNumber'] ?? '',
@@ -402,6 +412,8 @@ class Bill {
         'orderId': orderId,
         'restaurantName': restaurantName,
         'restaurantLogoUrl': restaurantLogoUrl,
+        'restaurantPhone': restaurantPhone,
+        'restaurantGstNumber': restaurantGstNumber,
         'tableNumber': tableNumber,
         'tableName': tableName,
         'orderNumber': orderNumber,

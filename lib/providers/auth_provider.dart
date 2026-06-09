@@ -102,6 +102,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required String phone,
+    String? gstNumber,
     String? address,
     List<int>? logoBytes,
     String? logoName,
@@ -119,6 +120,7 @@ class AuthProvider extends ChangeNotifier {
             'email': email,
             'password': password,
             'phone': phone,
+            if (gstNumber != null) 'gstNumber': gstNumber,
             if (address != null) 'address': address,
           },
           fileBytes: logoBytes,
@@ -131,6 +133,7 @@ class AuthProvider extends ChangeNotifier {
           'email': email,
           'password': password,
           'phone': phone,
+          if (gstNumber != null) 'gstNumber': gstNumber,
           if (address != null) 'address': address,
         });
       }
@@ -196,6 +199,24 @@ class AuthProvider extends ChangeNotifier {
     _restaurant = null;
     _state = AuthState.unauthenticated;
     notifyListeners();
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    _state = AuthState.loading;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      // Mocking the forgot password logic since no backend endpoint exists
+      await Future.delayed(const Duration(seconds: 1));
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to process request';
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<void> _cacheRestaurant(Restaurant restaurant) {

@@ -174,8 +174,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             icon: const Icon(Icons.print_rounded, color: AppColors.textSecondary),
             onPressed: () {
               if (restaurant != null) {
-                PdfPrinterUtil.printReceipt(_order,
-                    restaurantName: restaurant.name);
+                PdfPrinterUtil.printReceipt(
+                  _order,
+                  restaurantName: restaurant.name,
+                  restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
+                  restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+                );
               }
             },
           ),
@@ -204,8 +208,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             visualDensity: VisualDensity.compact,
             onPressed: () {
               if (restaurant != null) {
-                PdfPrinterUtil.printReceipt(_order,
-                    restaurantName: restaurant.name);
+                PdfPrinterUtil.printReceipt(
+                  _order,
+                  restaurantName: restaurant.name,
+                  restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
+                  restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+                );
               }
             },
           ),
@@ -260,6 +268,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             style: AppTextStyles.headingM,
           ),
           const SizedBox(height: 4),
+          if ((_bill?.restaurantPhone ?? restaurant?.phone) != null)
+            Text(
+              'Ph: ${_bill?.restaurantPhone ?? restaurant?.phone}',
+              style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+            ),
+          if ((_bill?.restaurantGstNumber ?? restaurant?.gstNumber) != null && 
+              (_bill?.restaurantGstNumber ?? restaurant?.gstNumber)!.isNotEmpty)
+            Text(
+              'GST: ${_bill?.restaurantGstNumber ?? restaurant?.gstNumber}',
+              style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+            ),
+          const SizedBox(height: 8),
           Text(
             'Table ${_order.tableNumber} — ${_order.tableName}',
             style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
@@ -374,8 +394,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           icon: Icons.print_rounded,
           onPressed: () {
             if (restaurant != null) {
-              PdfPrinterUtil.printReceipt(_order,
-                  restaurantName: restaurant.name);
+              PdfPrinterUtil.printReceipt(
+                _order,
+                restaurantName: restaurant.name,
+                restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
+                restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+              );
             }
           },
           variant: AppButtonVariant.secondary,

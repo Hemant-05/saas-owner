@@ -96,11 +96,15 @@ class _AdjustStockBottomSheetState extends State<AdjustStockBottomSheet> {
         color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Drag handle
@@ -219,6 +223,9 @@ class _AdjustStockBottomSheetState extends State<AdjustStockBottomSheet> {
                   : Icons.remove_circle_outline_rounded,
             ),
           ],
+        ),
+      ),
+    ),
         ),
       ),
     );

@@ -18,12 +18,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _restaurantNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _gstController = TextEditingController();
 
   bool _obscurePassword = true;
-  String _businessType = 'restaurant';
-
-  final String _coverImage =
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&q=80';
 
   @override
   void dispose() {
@@ -31,6 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _restaurantNameController.dispose();
+    _phoneController.dispose();
+    _gstController.dispose();
     super.dispose();
   }
 
@@ -43,7 +43,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _restaurantNameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      phone: '0000000000', // Placeholder since phone was removed from UI
+      phone: _phoneController.text.trim(),
+      gstNumber: _gstController.text.trim().isNotEmpty ? _gstController.text.trim() : null,
     );
 
     if (!mounted) return;
@@ -66,40 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth > 800) {
-              return Row(
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: Center(child: _buildForm(context)),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: _buildCoverImage(),
-                  ),
-                ],
-              );
-            } else {
-              return Center(child: _buildForm(context));
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCoverImage() {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      width: double.infinity,
-      height: double.infinity,
-      child: Image.network(
-        _coverImage,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const Center(child: Icon(Icons.restaurant, size: 64, color: Colors.grey)),
+        child: Center(child: _buildForm(context)),
       ),
     );
   }
@@ -163,32 +131,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Business Type', style: theme.textTheme.labelLarge),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.inputDecorationTheme.fillColor,
-                      borderRadius: AppRadius.borderMedium,
-                      border: Border.all(color: theme.dividerColor),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _businessType,
-                        isExpanded: true,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        items: const [
-                          DropdownMenuItem(value: 'restaurant', child: Text('Restaurant')),
-                          DropdownMenuItem(value: 'food_truck', child: Text('Food Truck')),
-                          DropdownMenuItem(value: 'cafe', child: Text('Cafe')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _businessType = val);
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                   Text('Full Name', style: theme.textTheme.labelLarge),
                   const SizedBox(height: 8),
                   _buildTextField(
@@ -205,6 +147,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Type your business name',
                     icon: Icons.storefront_outlined,
                     validator: (v) => v!.isEmpty ? 'Business name required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Phone Number', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _phoneController,
+                    hint: 'Type your phone number',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) => v!.isEmpty ? 'Phone number required' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  Text('GST Number (Optional)', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    controller: _gstController,
+                    hint: 'Type your GST number',
+                    icon: Icons.receipt_long_outlined,
                   ),
                   const SizedBox(height: 20),
                   Text('Email', style: theme.textTheme.labelLarge),
