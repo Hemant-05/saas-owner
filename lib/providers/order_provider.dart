@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
@@ -18,7 +18,8 @@ class OrderProvider extends ChangeNotifier {
   bool _isOfflineMode = false;
   String? _errorMessage;
   DateTime? _lastUpdatedAt;
-  IO.Socket? _socket;
+  Order? _latestNewOrderAlert;
+  io.Socket? _socket;
   Timer? _refreshTimer;
 
   List<Order> get activeOrders => _activeOrders;
@@ -27,6 +28,7 @@ class OrderProvider extends ChangeNotifier {
   bool get isOfflineMode => _isOfflineMode;
   String? get errorMessage => _errorMessage;
   DateTime? get lastUpdatedAt => _lastUpdatedAt;
+  Order? get latestNewOrderAlert => _latestNewOrderAlert;
 
   // Kanban columns
   List<Order> get newOrders =>
@@ -48,8 +50,7 @@ class OrderProvider extends ChangeNotifier {
 
   Future<void> _showNewOrderNotification(Order order) async {
     try {
-      final player = AudioPlayer();
-      await player.play(UrlSource('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'));
+      await SystemSound.play(SystemSoundType.alert);
     } catch (e) {
       debugPrint('Error playing sound: $e');
     }
@@ -60,15 +61,28 @@ class OrderProvider extends ChangeNotifier {
       type: 'new_order',
       title: '🔔 New Order!',
       body:
-          'Table ${order.tableNumber} — ₹${order.totalAmount.toStringAsFixed(2)}',
+          '${_orderLocationLabel(order)} — ₹${order.totalAmount.toStringAsFixed(2)}',
       data: {
         'type': 'new_order',
         'orderId': order.id,
         'tableNumber': order.tableNumber.toString(),
+        'pickupNumber': order.orderPickupNumber?.toString() ?? '',
         'orderNumber': order.orderNumber,
       },
       receivedAt: DateTime.now(),
     ));
+  }
+
+  String _orderLocationLabel(Order order) {
+    if (order.businessType == 'food_truck') {
+      return 'Pickup #${order.orderPickupNumber ?? '--'}';
+    }
+    return 'Table ${order.tableNumber}';
+  }
+
+  void dismissLatestOrderAlert() {
+    _latestNewOrderAlert = null;
+    notifyListeners();
   }
 
   // ─── Socket.io ─────────────────────────────────────────────────────────────
@@ -76,9 +90,9 @@ class OrderProvider extends ChangeNotifier {
   void connectSocket(String restaurantId, {VoidCallback? onOrderEvent}) {
     if (_socket != null && _socket!.connected) return;
 
-    _socket = IO.io(
+    _socket = io.io(
       ApiConfig.socketUrl,
-      IO.OptionBuilder()
+      io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .build(),
@@ -105,6 +119,7 @@ class OrderProvider extends ChangeNotifier {
         // Insert at top of active orders if not already present
         if (!_activeOrders.any((o) => o.id == newOrder.id)) {
           _activeOrders.insert(0, newOrder);
+          _latestNewOrderAlert = newOrder;
           unawaited(_cacheActiveOrders());
           notifyListeners();
           _showNewOrderNotification(newOrder);

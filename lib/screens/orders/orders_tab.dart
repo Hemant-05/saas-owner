@@ -15,7 +15,8 @@ class OrdersTab extends StatefulWidget {
   State<OrdersTab> createState() => _OrdersTabState();
 }
 
-class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMixin {
+class _OrdersTabState extends State<OrdersTab>
+    with SingleTickerProviderStateMixin {
   Order? _selectedOrder;
   late TabController _tabController;
 
@@ -70,9 +71,12 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
                 flex: showRightPanel ? 1 : 2,
                 child: Container(
                   decoration: BoxDecoration(
-                    border: showRightPanel ? const Border(
-                      right: BorderSide(color: AppColors.border, width: 0.5),
-                    ) : null,
+                    border: showRightPanel
+                        ? const Border(
+                            right:
+                                BorderSide(color: AppColors.border, width: 0.5),
+                          )
+                        : null,
                   ),
                   child: _buildDesktopKanban(context, op),
                 ),
@@ -163,7 +167,8 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
         return Container(
           width: double.infinity,
           color: color.withValues(alpha: 0.15),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           child: Row(
             children: [
               Icon(icon, color: color, size: 20),
@@ -190,7 +195,8 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -208,7 +214,9 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
                     onTap: (o) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: o.id, order: o)),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                OrderDetailScreen(orderId: o.id, order: o)),
                       );
                     },
                   ),
@@ -228,7 +236,9 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
                     onTap: (o) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: o.id, order: o)),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                OrderDetailScreen(orderId: o.id, order: o)),
                       );
                     },
                   ),
@@ -248,7 +258,9 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
                     onTap: (o) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderId: o.id, order: o)),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                OrderDetailScreen(orderId: o.id, order: o)),
                       );
                     },
                   ),
@@ -265,13 +277,15 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
   Widget _buildAppBar(BuildContext context, OrderProvider op) {
     return Container(
       color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
       child: Row(
         children: [
           if (!_isDesktop) ...[
             Builder(
               builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
+                icon: const Icon(Icons.menu_rounded,
+                    color: AppColors.textPrimary),
                 onPressed: () => HomeScreen.openDrawer(),
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -287,19 +301,22 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
               final total = op2.activeOrders.length;
               if (total == 0) return const SizedBox.shrink();
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: AppRadius.borderFull,
                 ),
                 child: Text('$total active',
-                    style: AppTextStyles.labelS.copyWith(color: AppColors.accent)),
+                    style:
+                        AppTextStyles.labelS.copyWith(color: AppColors.accent)),
               );
             },
           ),
           const SizedBox(width: AppSpacing.sm),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppColors.textSecondary),
             onPressed: () => op.fetchActiveOrders(),
             visualDensity: VisualDensity.compact,
           ),
@@ -307,7 +324,6 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
       ),
     );
   }
-
 
   // ─── Right: detail panel ──────────────────────────────────────────────────────
   Widget _buildDetailPanel(BuildContext context, OrderProvider op) {
@@ -324,7 +340,8 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
         // Mini header
         Container(
           color: AppColors.surface,
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.sm, AppSpacing.sm, AppSpacing.sm),
           child: Row(
             children: [
               const Icon(Icons.receipt_long_rounded,
@@ -338,8 +355,7 @@ class _OrdersTabState extends State<OrdersTab> with SingleTickerProviderStateMix
               IconButton(
                 icon: const Icon(Icons.close_rounded,
                     color: AppColors.textMuted, size: 20),
-                onPressed: () =>
-                    setState(() => _selectedOrder = null),
+                onPressed: () => setState(() => _selectedOrder = null),
                 visualDensity: VisualDensity.compact,
               ),
             ],
@@ -396,7 +412,8 @@ class _KanbanColumn extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.sm),
             child: Row(
               children: [
                 Container(
@@ -411,7 +428,8 @@ class _KanbanColumn extends StatelessWidget {
                 Text(title, style: AppTextStyles.labelM.copyWith(color: color)),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: AppRadius.borderFull,
@@ -429,15 +447,18 @@ class _KanbanColumn extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 32),
               child: Center(
                 child: Text('No orders here',
-                    style: AppTextStyles.bodyM.copyWith(color: AppColors.textMuted)),
+                    style: AppTextStyles.bodyM
+                        .copyWith(color: AppColors.textMuted)),
               ),
             )
           else
             Expanded(
               child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.md),
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.md),
                 itemCount: orders.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSpacing.sm),
                 itemBuilder: (ctx, i) => _MobileOrderCard(
                   order: orders[i],
                   accentColor: color,
@@ -486,6 +507,17 @@ class _MobileOrderCard extends StatelessWidget {
     return '${diff.inHours}h ${diff.inMinutes % 60}m ago';
   }
 
+  String get _locationLabel {
+    if (order.businessType == 'food_truck') {
+      return 'Pickup #${order.orderPickupNumber ?? '--'}';
+    }
+    return 'Table ${order.tableNumber}';
+  }
+
+  IconData get _locationIcon => order.businessType == 'food_truck'
+      ? Icons.confirmation_number_rounded
+      : Icons.table_bar_rounded;
+
   Future<void> _handleAction(BuildContext context) async {
     if (nextStatus == 'delivered' && order.paymentStatus == 'pending') {
       _showPaymentDialog(context);
@@ -508,7 +540,8 @@ class _MobileOrderCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('₹${order.totalAmount.toStringAsFixed(2)}',
-                  style: AppTextStyles.headingL.copyWith(color: AppColors.paymentPaid)),
+                  style: AppTextStyles.headingL
+                      .copyWith(color: AppColors.paymentPaid)),
               const SizedBox(height: AppSpacing.lg),
               ...[
                 ('cash', 'Cash', Icons.money_rounded),
@@ -531,14 +564,17 @@ class _MobileOrderCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel', style: AppTextStyles.labelM.copyWith(color: AppColors.textMuted)),
+              child: Text('Cancel',
+                  style: AppTextStyles.labelM
+                      .copyWith(color: AppColors.textMuted)),
             ),
             AppButton(
               label: 'Paid & Delivered',
               onPressed: () async {
                 Navigator.pop(ctx);
                 await orderProvider.updateOrderStatus(order.id, 'delivered');
-                await orderProvider.updatePaymentStatus(order.id, 'paid', paymentMethod: selectedMethod);
+                await orderProvider.updatePaymentStatus(order.id, 'paid',
+                    paymentMethod: selectedMethod);
               },
               variant: AppButtonVariant.primary,
             ),
@@ -558,13 +594,15 @@ class _MobileOrderCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => OrderDetailScreen(orderId: order.id, order: order),
+              builder: (_) =>
+                  OrderDetailScreen(orderId: order.id, order: order),
             ),
           );
         }
       },
       child: AppCard(
-        color: isSelected ? accentColor.withValues(alpha: 0.1) : AppColors.surface,
+        color:
+            isSelected ? accentColor.withValues(alpha: 0.1) : AppColors.surface,
         border: Border.all(
           color: isSelected ? accentColor : AppColors.border,
           width: isSelected ? 1.5 : 0.5,
@@ -578,15 +616,16 @@ class _MobileOrderCard extends StatelessWidget {
                 Text(order.orderNumber, style: AppTextStyles.labelM),
                 const Spacer(),
                 Text(_timeElapsed(),
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted)),
+                    style: AppTextStyles.bodyS
+                        .copyWith(color: AppColors.textMuted)),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.table_bar_rounded, color: accentColor, size: 14),
+                Icon(_locationIcon, color: accentColor, size: 14),
                 const SizedBox(width: 4),
-                Text('Table ${order.tableNumber}',
+                Text(_locationLabel,
                     style: AppTextStyles.labelS.copyWith(color: accentColor)),
               ],
             ),
@@ -598,7 +637,8 @@ class _MobileOrderCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Text('${item.quantity}×',
-                          style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary)),
+                          style: AppTextStyles.bodyS
+                              .copyWith(color: AppColors.textSecondary)),
                       const SizedBox(width: AppSpacing.xs),
                       Expanded(
                           child: Text(item.name,
@@ -612,7 +652,9 @@ class _MobileOrderCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text('+ ${order.items.length - 3} more items',
-                    style: AppTextStyles.bodyS.copyWith(color: AppColors.textMuted, fontStyle: FontStyle.italic)),
+                    style: AppTextStyles.bodyS.copyWith(
+                        color: AppColors.textMuted,
+                        fontStyle: FontStyle.italic)),
               ),
             const SizedBox(height: 8),
             Row(

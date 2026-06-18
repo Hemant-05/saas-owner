@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/menu_provider.dart';
@@ -28,6 +29,13 @@ const _kNavItems = [
   (icon: Icons.notifications_rounded, label: 'Notifications'),
 ];
 
+const _kFoodTruckNavItems = [
+  (icon: Icons.receipt_long_rounded, label: 'Orders'),
+  (icon: Icons.restaurant_menu_rounded, label: 'Dishes'),
+  (icon: Icons.inventory_2_rounded, label: 'Inventory'),
+  (icon: Icons.notifications_rounded, label: 'Notifications'),
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -45,14 +53,33 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _tabs = const [
-    DashboardTab(),
-    OrdersTab(),
-    MenuTab(),
-    TablesTab(),
-    InventoryTab(),
-    NotificationHistoryScreen(),
-  ];
+  List<Widget> _tabsFor(bool isFoodTruck) {
+    if (isFoodTruck) {
+      return const [
+        OrdersTab(),
+        MenuTab(),
+        InventoryTab(),
+        NotificationHistoryScreen(),
+      ];
+    }
+
+    return const [
+      DashboardTab(),
+      OrdersTab(),
+      MenuTab(),
+      TablesTab(),
+      InventoryTab(),
+      NotificationHistoryScreen(),
+    ];
+  }
+
+  List<({IconData icon, String label})> _navItemsFor(bool isFoodTruck) =>
+      isFoodTruck ? _kFoodTruckNavItems : _kNavItems;
+
+  int _navIndexFor(List<({IconData icon, String label})> items, String label) {
+    final index = items.indexWhere((item) => item.label == label);
+    return index == -1 ? 0 : index;
+  }
 
   @override
   void initState() {
@@ -66,10 +93,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final menuProvider = context.read<MenuProvider>();
     final tableProvider = context.read<TableProvider>();
     final inventoryProvider = context.read<InventoryProvider>();
+    final dashboardProvider = context.read<DashboardProvider>();
 
     if (auth.restaurant != null) {
       await orderProvider.initNotifications();
-      final dashboardProvider = context.read<DashboardProvider>();
+      if (!mounted) return;
       orderProvider.connectSocket(
         auth.restaurant!.id,
         onOrderEvent: () {
@@ -93,6 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    final authProvider = context.read<AuthProvider>();
+    final navigator = Navigator.of(context, rootNavigator: true);
     final scaffold = HomeScreen.scaffoldKey.currentState;
     if (scaffold?.isDrawerOpen ?? false) {
       Navigator.of(context).pop();
@@ -124,8 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (confirm == true && mounted) {
-      await context.read<AuthProvider>().logout();
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      await authProvider.logout();
+      navigator.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
@@ -135,13 +165,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 900;
+    final auth = context.watch<AuthProvider>();
+    final isFoodTruck = auth.restaurant?.isFoodTruck ?? false;
+    final tabs = _tabsFor(isFoodTruck);
+    final navItems = _navItemsFor(isFoodTruck);
     final theme = Theme.of(context);
+    if (_currentIndex >= tabs.length) _currentIndex = 0;
 
     return Scaffold(
       key: HomeScreen.scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: isDesktop ? null : _buildDrawer(context),
-      bottomNavigationBar: isDesktop ? null : _buildBottomNavBar(context),
+      drawer: isDesktop ? null : _buildDrawer(context, navItems),
+      bottomNavigationBar:
+          isDesktop ? null : _buildBottomNavBar(context, navItems),
       body: Stack(
         children: [
           Column(
@@ -149,10 +185,26 @@ class _HomeScreenState extends State<HomeScreen> {
               const _OfflineSyncBanner(),
               Expanded(
                 child: isDesktop
-                    ? _buildDesktopLayout(context)
-                    : _buildMobileLayout(context),
+                    ? _buildDesktopLayout(context, tabs, navItems)
+                    : _buildMobileLayout(context, tabs),
               ),
             ],
+          ),
+          Positioned(
+            top: isDesktop ? 24 : MediaQuery.of(context).padding.top + 16,
+            left: isDesktop ? 252 : 16,
+            right: 88,
+            child: Consumer<OrderProvider>(
+              builder: (context, orders, _) {
+                final order = orders.latestNewOrderAlert;
+                if (order == null) return const SizedBox.shrink();
+                return _StickyOrderAlert(
+                  order: order,
+                  onTap: () => _navigate(_navIndexFor(navItems, 'Orders')),
+                  onClose: orders.dismissLatestOrderAlert,
+                );
+              },
+            ),
           ),
           // Sticky Notification Bell
           Positioned(
@@ -166,7 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   mini: true,
                   backgroundColor: AppColors.surfaceElevated,
                   elevation: 6,
-                  onPressed: () => _navigate(5),
+                  onPressed: () =>
+                      _navigate(_navIndexFor(navItems, 'Notifications')),
                   child: Badge(
                     label: Text('$count'),
                     backgroundColor: const Color(0xFFFF4757),
@@ -183,7 +236,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ─── Desktop: permanent side nav rail ────────────────────────────────────────
-  Widget _buildDesktopLayout(BuildContext context) {
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    List<Widget> tabs,
+    List<({IconData icon, String label})> navItems,
+  ) {
     final auth = context.watch<AuthProvider>();
     final restaurant = auth.restaurant;
     final theme = Theme.of(context);
@@ -227,11 +284,16 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: AppSpacing.xl),
               // Nav items
-              ...List.generate(_kNavItems.length, (i) {
-                final item = _kNavItems[i];
+              ...List.generate(navItems.length, (i) {
+                final item = navItems[i];
                 return _sideNavItem(i, item.icon, item.label);
               }),
               const Spacer(),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: _AvailabilityTile(compact: true),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               const Divider(color: AppColors.border),
               // Profile row
               ListTile(
@@ -274,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: IndexedStack(
             index: _currentIndex,
-            children: _tabs,
+            children: tabs,
           ),
         ),
       ],
@@ -358,12 +420,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 icon,
-                color: isActive
-                    ? AppColors.accent
-                    : AppColors.textSecondaryLight,
+                color:
+                    isActive ? AppColors.accent : AppColors.textSecondaryLight,
                 size: 20,
               ),
-              if (index == 5)
+              if (label == 'Notifications')
                 ValueListenableBuilder<int>(
                   valueListenable: NotificationService().unreadCount,
                   builder: (_, count, child) =>
@@ -387,14 +448,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ─── Mobile: Bottom Nav ────────────────────────────────────────────────────────
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobileLayout(BuildContext context, List<Widget> tabs) {
     return IndexedStack(
       index: _currentIndex,
-      children: _tabs,
+      children: tabs,
     );
   }
 
-  Widget _buildBottomNavBar(BuildContext context) {
+  Widget _buildBottomNavBar(
+    BuildContext context,
+    List<({IconData icon, String label})> navItems,
+  ) {
     final theme = Theme.of(context);
     return BottomNavigationBar(
       currentIndex: _currentIndex,
@@ -403,7 +467,7 @@ class _HomeScreenState extends State<HomeScreen> {
       selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
       unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor,
       backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
-      items: _kNavItems.map((item) {
+      items: navItems.map((item) {
         return BottomNavigationBarItem(
           icon: Icon(item.icon),
           label: item.label,
@@ -412,7 +476,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
+  Widget _buildDrawer(
+    BuildContext context,
+    List<({IconData icon, String label})> navItems,
+  ) {
     final auth = context.watch<AuthProvider>();
     final restaurant = auth.restaurant;
 
@@ -468,10 +535,17 @@ class _HomeScreenState extends State<HomeScreen> {
             const Divider(color: AppColors.border),
             const SizedBox(height: AppSpacing.sm),
             // Nav items
-            ...List.generate(_kNavItems.length, (i) {
-              final item = _kNavItems[i];
+            ...List.generate(navItems.length, (i) {
+              final item = navItems[i];
               return _drawerNavItem(i, item.icon, item.label);
             }),
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: _AvailabilityTile(),
+            ),
             const Divider(color: AppColors.border),
             // Profile
             ListTile(
@@ -516,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: isActive ? AppColors.accent : AppColors.textSecondaryLight,
             size: 20,
           ),
-          if (index == 5)
+          if (label == 'Notifications')
             Positioned(
               right: -8,
               top: -6,
@@ -544,6 +618,84 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _AvailabilityTile extends StatefulWidget {
+  final bool compact;
+
+  const _AvailabilityTile({this.compact = false});
+
+  @override
+  State<_AvailabilityTile> createState() => _AvailabilityTileState();
+}
+
+class _AvailabilityTileState extends State<_AvailabilityTile> {
+  bool _saving = false;
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _saving = true);
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.updateProfile(isAcceptingOrders: value);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.errorMessage ?? 'Could not update availability'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final restaurant = context.watch<AuthProvider>().restaurant;
+    final isOnline = restaurant?.isAcceptingOrders ?? true;
+    final color = isOnline ? AppColors.success : AppColors.warning;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: widget.compact ? AppSpacing.sm : AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.borderMedium,
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+            color: color,
+            size: 18,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              isOnline ? 'Online' : 'Offline',
+              style: AppTextStyles.labelM.copyWith(color: color),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (_saving)
+            SizedBox(
+              width: widget.compact ? 18 : 20,
+              height: widget.compact ? 18 : 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: color),
+            )
+          else
+            Switch(
+              value: isOnline,
+              onChanged: _toggle,
+              activeThumbColor: AppColors.success,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NavUnreadDot extends StatelessWidget {
   final int count;
 
@@ -566,6 +718,89 @@ class _NavUnreadDot extends StatelessWidget {
           fontSize: 9,
           fontWeight: FontWeight.w800,
           height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+class _StickyOrderAlert extends StatelessWidget {
+  final Order order;
+  final VoidCallback onTap;
+  final VoidCallback onClose;
+
+  const _StickyOrderAlert({
+    required this.order,
+    required this.onTap,
+    required this.onClose,
+  });
+
+  String get _locationLabel {
+    if (order.businessType == 'food_truck') {
+      return 'Pickup #${order.orderPickupNumber ?? '--'}';
+    }
+    return 'Table ${order.tableNumber}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+            boxShadow: AppShadows.md,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.borderMedium,
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: AppColors.accent,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('New order received',
+                        style: AppTextStyles.labelM),
+                    Text(
+                      '$_locationLabel • ₹${order.totalAmount.toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyS
+                          .copyWith(color: AppColors.textSecondaryLight),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded, size: 18),
+                color: AppColors.textMutedLight,
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Dismiss',
+              ),
+            ],
+          ),
         ),
       ),
     );

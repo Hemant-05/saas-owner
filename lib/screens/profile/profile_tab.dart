@@ -18,7 +18,10 @@ class _ProfileTabState extends State<ProfileTab> {
   bool _isEditing = false;
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
+  late TextEditingController _gstCtrl;
   late TextEditingController _addressCtrl;
+  late String _businessType;
+  late bool _isAcceptingOrders;
   XFile? _newLogo;
   Uint8List? _newLogoBytes;
   bool _isSaving = false;
@@ -29,20 +32,25 @@ class _ProfileTabState extends State<ProfileTab> {
     final restaurant = context.read<AuthProvider>().restaurant;
     _nameCtrl = TextEditingController(text: restaurant?.name ?? '');
     _phoneCtrl = TextEditingController(text: restaurant?.phone ?? '');
+    _gstCtrl = TextEditingController(text: restaurant?.gstNumber ?? '');
     _addressCtrl = TextEditingController(text: restaurant?.address ?? '');
+    _businessType = restaurant?.businessType ?? 'cafe_restaurant';
+    _isAcceptingOrders = restaurant?.isAcceptingOrders ?? true;
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _gstCtrl.dispose();
     _addressCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickLogo() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked != null) {
       final bytes = await picked.readAsBytes();
       setState(() {
@@ -58,7 +66,10 @@ class _ProfileTabState extends State<ProfileTab> {
     final success = await auth.updateProfile(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
+      gstNumber: _gstCtrl.text.trim(),
       address: _addressCtrl.text.trim(),
+      businessType: _businessType,
+      isAcceptingOrders: _isAcceptingOrders,
       logoBytes: _newLogoBytes,
       logoName: _newLogo?.name,
     );
@@ -85,6 +96,8 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _logout() async {
+    final authProvider = context.read<AuthProvider>();
+    final navigator = Navigator.of(context, rootNavigator: true);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -104,15 +117,16 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF4757)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF4757)),
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
     if (confirm == true && mounted) {
-      await context.read<AuthProvider>().logout();
-      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      await authProvider.logout();
+      navigator.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
@@ -147,14 +161,17 @@ class _ProfileTabState extends State<ProfileTab> {
                     GestureDetector(
                       onTap: () => setState(() => _isEditing = true),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF6B35).withOpacity(0.12),
+                          color:
+                              const Color(0xFFFF6B35).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.edit_rounded, color: Color(0xFFFF6B35), size: 16),
+                            Icon(Icons.edit_rounded,
+                                color: Color(0xFFFF6B35), size: 16),
                             SizedBox(width: 6),
                             Text('Edit',
                                 style: TextStyle(
@@ -177,7 +194,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFFF6B35), width: 3),
+                        border: Border.all(
+                            color: const Color(0xFFFF6B35), width: 3),
                       ),
                       child: ClipOval(
                         child: _newLogoBytes != null
@@ -186,7 +204,8 @@ class _ProfileTabState extends State<ProfileTab> {
                                 ? CachedNetworkImage(
                                     imageUrl: restaurant!.logoUrl!,
                                     fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) => _avatarPlaceholder(restaurant),
+                                    errorWidget: (_, __, ___) =>
+                                        _avatarPlaceholder(restaurant),
                                   )
                                 : _avatarPlaceholder(restaurant)),
                       ),
@@ -236,27 +255,71 @@ class _ProfileTabState extends State<ProfileTab> {
                 child: _isEditing
                     ? Column(
                         children: [
-                          _editField('Restaurant Name', _nameCtrl, Icons.store_rounded),
+                          _editField('Restaurant Name', _nameCtrl,
+                              Icons.store_rounded),
                           const SizedBox(height: 14),
                           _editField('Phone', _phoneCtrl, Icons.phone_outlined,
                               keyboardType: TextInputType.phone),
                           const SizedBox(height: 14),
-                          _editField('Address', _addressCtrl, Icons.location_on_outlined,
+                          _editField('GST Number', _gstCtrl,
+                              Icons.receipt_long_outlined),
+                          const SizedBox(height: 14),
+                          _businessTypeSelector(),
+                          const SizedBox(height: 14),
+                          _availabilitySwitch(),
+                          const SizedBox(height: 14),
+                          _editField('Address', _addressCtrl,
+                              Icons.location_on_outlined,
                               maxLines: 2),
                         ],
                       )
                     : Column(
                         children: [
-                          _profileRow(Icons.store_rounded, 'Restaurant', restaurant?.name ?? ''),
-                          const Divider(color: AppColors.borderLight, height: 20),
-                          _profileRow(Icons.email_outlined, 'Email', restaurant?.email ?? ''),
-                          const Divider(color: AppColors.borderLight, height: 20),
-                          _profileRow(Icons.phone_outlined, 'Phone', restaurant?.phone ?? ''),
+                          _profileRow(Icons.store_rounded, 'Restaurant',
+                              restaurant?.name ?? ''),
+                          const Divider(
+                              color: AppColors.borderLight, height: 20),
+                          _profileRow(Icons.email_outlined, 'Email',
+                              restaurant?.email ?? ''),
+                          const Divider(
+                              color: AppColors.borderLight, height: 20),
+                          _profileRow(Icons.phone_outlined, 'Phone',
+                              restaurant?.phone ?? ''),
+                          if (restaurant?.gstNumber != null &&
+                              restaurant!.gstNumber!.isNotEmpty) ...[
+                            const Divider(
+                                color: AppColors.borderLight, height: 20),
+                            _profileRow(Icons.receipt_long_outlined, 'GST',
+                                restaurant.gstNumber!),
+                          ],
+                          const Divider(
+                              color: AppColors.borderLight, height: 20),
+                          _profileRow(
+                            restaurant?.isAcceptingOrders == true
+                                ? Icons.wifi_rounded
+                                : Icons.wifi_off_rounded,
+                            'Orders',
+                            restaurant?.isAcceptingOrders == true
+                                ? 'Online and accepting orders'
+                                : 'Offline',
+                          ),
+                          const Divider(
+                              color: AppColors.borderLight, height: 20),
+                          _profileRow(
+                            restaurant?.isFoodTruck == true
+                                ? Icons.local_shipping_rounded
+                                : Icons.storefront_rounded,
+                            'Mode',
+                            restaurant?.isFoodTruck == true
+                                ? 'Food truck'
+                                : 'Restaurant',
+                          ),
                           if (restaurant?.address != null &&
                               restaurant!.address!.isNotEmpty) ...[
-                            const Divider(color: AppColors.borderLight, height: 20),
-                            _profileRow(
-                                Icons.location_on_outlined, 'Address', restaurant.address!),
+                            const Divider(
+                                color: AppColors.borderLight, height: 20),
+                            _profileRow(Icons.location_on_outlined, 'Address',
+                                restaurant.address!),
                           ],
                         ],
                       ),
@@ -297,7 +360,8 @@ class _ProfileTabState extends State<ProfileTab> {
                               )
                             : const Text('Save',
                                 style: TextStyle(
-                                    color: Colors.white, fontWeight: FontWeight.w700)),
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
@@ -328,7 +392,7 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _avatarPlaceholder(restaurant) => Container(
-        color: const Color(0xFFFF6B35).withOpacity(0.15),
+        color: const Color(0xFFFF6B35).withValues(alpha: 0.15),
         child: Center(
           child: Text(
             (restaurant?.name ?? 'R').substring(0, 1).toUpperCase(),
@@ -378,8 +442,7 @@ class _ProfileTabState extends State<ProfileTab> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-          prefixIcon:
-              Icon(icon, color: AppColors.textSecondaryLight, size: 18),
+          prefixIcon: Icon(icon, color: AppColors.textSecondaryLight, size: 18),
           filled: true,
           fillColor: AppColors.surfaceLight,
           border: OutlineInputBorder(
@@ -396,4 +459,59 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
         ),
       );
+
+  Widget _businessTypeSelector() {
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment(
+          value: 'cafe_restaurant',
+          icon: Icon(Icons.storefront_rounded),
+          label: Text('Restaurant'),
+        ),
+        ButtonSegment(
+          value: 'food_truck',
+          icon: Icon(Icons.local_shipping_rounded),
+          label: Text('Food truck'),
+        ),
+      ],
+      selected: {_businessType},
+      onSelectionChanged: (value) {
+        setState(() => _businessType = value.first);
+      },
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.accent.withValues(alpha: 0.12)
+              : AppColors.surfaceLight,
+        ),
+      ),
+    );
+  }
+
+  Widget _availabilitySwitch() {
+    return SwitchListTile(
+      value: _isAcceptingOrders,
+      onChanged: (value) => setState(() => _isAcceptingOrders = value),
+      title: const Text(
+        'Accepting orders',
+        style: TextStyle(
+          color: AppColors.textPrimaryLight,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Text(
+        _isAcceptingOrders
+            ? 'Customers can place new orders'
+            : 'New orders are paused until you go online',
+        style: const TextStyle(color: AppColors.textSecondaryLight),
+      ),
+      secondary: Icon(
+        _isAcceptingOrders ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+        color: _isAcceptingOrders ? AppColors.success : AppColors.warning,
+      ),
+      activeThumbColor: AppColors.success,
+      contentPadding: EdgeInsets.zero,
+    );
+  }
 }

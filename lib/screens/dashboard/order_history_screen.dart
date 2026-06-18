@@ -88,7 +88,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               subtitle: 'Completed orders will appear here',
             );
           }
-          
+
           // Automatically select the first order if none is selected
           if (_selectedOrder == null && provider.orderHistory.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -230,6 +230,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }) {
     final dateFormat = DateFormat('dd MMM yyyy • hh:mm a');
     final isPaid = order.paymentStatus == 'paid';
+    final locationLabel = order.businessType == 'food_truck'
+        ? 'Pickup #${order.orderPickupNumber ?? '--'}'
+        : 'Table ${order.tableNumber}';
+    final locationIcon = order.businessType == 'food_truck'
+        ? Icons.confirmation_number_rounded
+        : Icons.table_bar_rounded;
 
     return GestureDetector(
       onTap: onTap,
@@ -274,11 +280,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.table_bar_rounded,
-                    color: AppColors.textMuted, size: 13),
+                Icon(locationIcon, color: AppColors.textMuted, size: 13),
                 const SizedBox(width: 4),
                 Text(
-                  'Table ${order.tableNumber}',
+                  locationLabel,
                   style:
                       AppTextStyles.bodyS.copyWith(color: AppColors.textMuted),
                 ),
