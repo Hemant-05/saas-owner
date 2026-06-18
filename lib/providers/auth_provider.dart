@@ -162,17 +162,26 @@ class AuthProvider extends ChangeNotifier {
     String? name,
     String? phone,
     String? address,
+    String? gstNumber,
+    String? businessType,
+    bool? isAcceptingOrders,
     List<int>? logoBytes,
     String? logoName,
   }) async {
+    final fields = {
+      if (name != null) 'name': name,
+      if (phone != null) 'phone': phone,
+      if (address != null) 'address': address,
+      if (gstNumber != null) 'gstNumber': gstNumber,
+      if (businessType != null) 'businessType': businessType,
+      if (isAcceptingOrders != null)
+        'isAcceptingOrders': isAcceptingOrders.toString(),
+    };
+
     try {
       final response = await ApiService.putMultipart(
         ApiConfig.updateProfile,
-        fields: {
-          if (name != null) 'name': name,
-          if (phone != null) 'phone': phone,
-          if (address != null) 'address': address,
-        },
+        fields: fields,
         fileBytes: logoBytes,
         fileName: logoName,
         fileField: 'logo',
@@ -183,6 +192,24 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } on ApiException catch (e) {
+      if (e.isNetworkError &&
+          logoBytes == null &&
+          fields.isNotEmpty &&
+          _restaurant != null) {
+        await OfflineSyncService.enqueuePut(
+          url: ApiConfig.updateProfile,
+          body: fields,
+          label: 'Profile update',
+        );
+        _restaurant = Restaurant.fromJson({
+          ..._restaurant!.toJson(),
+          ...fields,
+          if (isAcceptingOrders != null) 'isAcceptingOrders': isAcceptingOrders,
+        });
+        await _cacheRestaurant(_restaurant!);
+        notifyListeners();
+        return true;
+      }
       _errorMessage = e.message;
       notifyListeners();
       return false;
@@ -206,11 +233,15 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      // Mocking the forgot password logic since no backend endpoint exists
-      await Future.delayed(const Duration(seconds: 1));
+      await ApiService.post(ApiConfig.forgotPassword, {'email': email});
       _state = AuthState.unauthenticated;
       notifyListeners();
       return true;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _state = AuthState.unauthenticated;
+      notifyListeners();
+      return false;
     } catch (e) {
       _errorMessage = 'Failed to process request';
       _state = AuthState.unauthenticated;
