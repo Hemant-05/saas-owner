@@ -17,7 +17,7 @@ class _SalesAnalyticsScreenState extends State<SalesAnalyticsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardProvider>().fetchDashboardStats();
-    });
+    }); 
   }
 
   @override
