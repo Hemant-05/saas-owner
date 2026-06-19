@@ -38,7 +38,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _fetchBill() async {
-    final bill = await context.read<OrderProvider>().fetchBill(widget.orderId);
+    final bill =
+        await context.read<OrderProvider>().fetchBill(widget.orderId);
     if (mounted) {
       setState(() {
         _bill = bill;
@@ -59,14 +60,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
-  String get _locationLabel {
-    if (_order.businessType == 'food_truck') {
-      return 'Pickup #${_order.orderPickupNumber ?? '--'}';
-    }
-    final tableName = _order.tableName.isEmpty ? '' : ' — ${_order.tableName}';
-    return 'Table ${_order.tableNumber}$tableName';
-  }
-
   void _showMarkPaidDialog() {
     String selectedMethod =
         _order.paymentMethod == 'pay_later' ? 'cash' : _order.paymentMethod;
@@ -75,15 +68,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.borderLarge),
-          title: const Text('Mark as Paid', style: AppTextStyles.headingM),
+          shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.borderLarge),
+          title: const Text('Mark as Paid',
+              style: AppTextStyles.headingM),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Total: ₹${_order.totalAmount.toStringAsFixed(2)}',
-                style:
-                    AppTextStyles.headingL.copyWith(color: AppColors.success),
+                style: AppTextStyles.headingL.copyWith(color: AppColors.success),
               ),
               const SizedBox(height: AppSpacing.md),
               ...[
@@ -92,7 +86,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ].map((m) => RadioListTile<String>(
                     value: m.$1,
                     groupValue: selectedMethod,
-                    onChanged: (v) => setDialogState(() => selectedMethod = v!),
+                    onChanged: (v) =>
+                        setDialogState(() => selectedMethod = v!),
                     title: Row(
                       children: [
                         Icon(m.$3, color: AppColors.textSecondary, size: 18),
@@ -108,8 +103,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text('Cancel',
-                  style: AppTextStyles.bodyM
-                      .copyWith(color: AppColors.textSecondary)),
+                  style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary)),
             ),
             AppButton(
               label: 'Confirm',
@@ -172,20 +166,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.border),
+          child:
+              Container(height: 1, color: AppColors.border),
         ),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.print_rounded, color: AppColors.textSecondary),
+            icon: const Icon(Icons.print_rounded, color: AppColors.textSecondary),
             onPressed: () {
               if (restaurant != null) {
                 PdfPrinterUtil.printReceipt(
                   _order,
                   restaurantName: restaurant.name,
                   restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
-                  restaurantGstNumber:
-                      _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+                  restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
                 );
               }
             },
@@ -199,8 +192,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Widget _buildEmbeddedHeader(BuildContext context, dynamic restaurant) {
     return Container(
       color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
       child: Row(
         children: [
           const Icon(Icons.receipt_long_rounded,
@@ -212,8 +204,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
           const Spacer(),
           IconButton(
-            icon:
-                const Icon(Icons.print_rounded, color: AppColors.textSecondary),
+            icon: const Icon(Icons.print_rounded, color: AppColors.textSecondary),
             visualDensity: VisualDensity.compact,
             onPressed: () {
               if (restaurant != null) {
@@ -221,8 +212,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   _order,
                   restaurantName: restaurant.name,
                   restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
-                  restaurantGstNumber:
-                      _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+                  restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
                 );
               }
             },
@@ -281,19 +271,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           if ((_bill?.restaurantPhone ?? restaurant?.phone) != null)
             Text(
               'Ph: ${_bill?.restaurantPhone ?? restaurant?.phone}',
-              style:
-                  AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
             ),
-          if ((_bill?.restaurantGstNumber ?? restaurant?.gstNumber) != null &&
+          if ((_bill?.restaurantGstNumber ?? restaurant?.gstNumber) != null && 
               (_bill?.restaurantGstNumber ?? restaurant?.gstNumber)!.isNotEmpty)
             Text(
               'GST: ${_bill?.restaurantGstNumber ?? restaurant?.gstNumber}',
-              style:
-                  AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyS.copyWith(color: AppColors.textSecondary),
             ),
           const SizedBox(height: 8),
           Text(
-            _locationLabel,
+            'Table ${_order.tableNumber} — ${_order.tableName}',
             style: AppTextStyles.bodyM.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
@@ -352,13 +340,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               )),
           const Divider(color: AppColors.border),
           const SizedBox(height: AppSpacing.md),
-          _summaryRow('Subtotal', '₹${_order.subtotal.toStringAsFixed(2)}',
-              AppColors.textSecondary),
+          _summaryRow('Subtotal',
+              '₹${_order.subtotal.toStringAsFixed(2)}', AppColors.textSecondary),
           const SizedBox(height: 6),
-          _summaryRow(
-              'Tax (${_order.taxPercent.toInt()}%)',
-              '₹${_order.taxAmount.toStringAsFixed(2)}',
-              AppColors.textSecondary),
+          _summaryRow('Tax (${_order.taxPercent.toInt()}%)',
+              '₹${_order.taxAmount.toStringAsFixed(2)}', AppColors.textSecondary),
           const SizedBox(height: AppSpacing.sm),
           const Divider(color: AppColors.border),
           const SizedBox(height: AppSpacing.sm),
@@ -412,8 +398,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 _order,
                 restaurantName: restaurant.name,
                 restaurantPhone: _bill?.restaurantPhone ?? restaurant.phone,
-                restaurantGstNumber:
-                    _bill?.restaurantGstNumber ?? restaurant.gstNumber,
+                restaurantGstNumber: _bill?.restaurantGstNumber ?? restaurant.gstNumber,
               );
             }
           },

@@ -7,9 +7,6 @@ class Restaurant {
   final String? gstNumber;
   final String? logoUrl;
   final bool isActive;
-  final bool isAcceptingOrders;
-  final String businessType;
-  final String? truckQrCodeUrl;
   final String? createdAt;
 
   const Restaurant({
@@ -21,13 +18,8 @@ class Restaurant {
     this.gstNumber,
     this.logoUrl,
     required this.isActive,
-    this.isAcceptingOrders = true,
-    this.businessType = 'cafe_restaurant',
-    this.truckQrCodeUrl,
     this.createdAt,
   });
-
-  bool get isFoodTruck => businessType == 'food_truck';
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
     return Restaurant(
@@ -39,9 +31,6 @@ class Restaurant {
       gstNumber: json['gstNumber'],
       logoUrl: json['logoUrl'],
       isActive: json['isActive'] ?? true,
-      isAcceptingOrders: json['isAcceptingOrders'] ?? true,
-      businessType: json['businessType'] ?? 'cafe_restaurant',
-      truckQrCodeUrl: json['truckQrCodeUrl'],
       createdAt: json['createdAt'],
     );
   }
@@ -55,9 +44,6 @@ class Restaurant {
         'gstNumber': gstNumber,
         'logoUrl': logoUrl,
         'isActive': isActive,
-        'isAcceptingOrders': isAcceptingOrders,
-        'businessType': businessType,
-        'truckQrCodeUrl': truckQrCodeUrl,
         'createdAt': createdAt,
       };
 }
@@ -246,8 +232,6 @@ class Order {
   final String tableId;
   final int tableNumber;
   final String tableName;
-  final String businessType;
-  final int? orderPickupNumber;
   final String orderNumber;
   final List<OrderItem> items;
   final double subtotal;
@@ -268,8 +252,6 @@ class Order {
     required this.tableId,
     required this.tableNumber,
     required this.tableName,
-    this.businessType = 'cafe_restaurant',
-    this.orderPickupNumber,
     required this.orderNumber,
     required this.items,
     required this.subtotal,
@@ -292,8 +274,6 @@ class Order {
       tableId: json['tableId'] ?? '',
       tableNumber: (json['tableNumber'] as num?)?.toInt() ?? 0,
       tableName: json['tableName'] ?? '',
-      businessType: json['businessType'] ?? 'cafe_restaurant',
-      orderPickupNumber: (json['orderPickupNumber'] as num?)?.toInt(),
       orderNumber: json['orderNumber'] ?? '',
       items: (json['items'] as List<dynamic>?)
               ?.map((i) => OrderItem.fromJson(i))
@@ -319,8 +299,6 @@ class Order {
         'tableId': tableId,
         'tableNumber': tableNumber,
         'tableName': tableName,
-        'businessType': businessType,
-        'orderPickupNumber': orderPickupNumber,
         'orderNumber': orderNumber,
         'items': items.map((item) => item.toJson()).toList(),
         'subtotal': subtotal,
@@ -348,8 +326,6 @@ class Order {
       tableId: tableId,
       tableNumber: tableNumber,
       tableName: tableName,
-      businessType: businessType,
-      orderPickupNumber: orderPickupNumber,
       orderNumber: orderNumber,
       items: items,
       subtotal: subtotal,
@@ -376,8 +352,6 @@ class Bill {
   final String? restaurantGstNumber;
   final int tableNumber;
   final String tableName;
-  final String businessType;
-  final int? orderPickupNumber;
   final String orderNumber;
   final List<OrderItem> items;
   final double subtotal;
@@ -397,8 +371,6 @@ class Bill {
     this.restaurantGstNumber,
     required this.tableNumber,
     required this.tableName,
-    this.businessType = 'cafe_restaurant',
-    this.orderPickupNumber,
     required this.orderNumber,
     required this.items,
     required this.subtotal,
@@ -420,8 +392,6 @@ class Bill {
       restaurantGstNumber: json['restaurantGstNumber'],
       tableNumber: (json['tableNumber'] as num?)?.toInt() ?? 0,
       tableName: json['tableName'] ?? '',
-      businessType: json['businessType'] ?? 'cafe_restaurant',
-      orderPickupNumber: (json['orderPickupNumber'] as num?)?.toInt(),
       orderNumber: json['orderNumber'] ?? '',
       items: (json['items'] as List<dynamic>?)
               ?.map((i) => OrderItem.fromJson(i))
@@ -446,8 +416,6 @@ class Bill {
         'restaurantGstNumber': restaurantGstNumber,
         'tableNumber': tableNumber,
         'tableName': tableName,
-        'businessType': businessType,
-        'orderPickupNumber': orderPickupNumber,
         'orderNumber': orderNumber,
         'items': items.map((item) => item.toJson()).toList(),
         'subtotal': subtotal,

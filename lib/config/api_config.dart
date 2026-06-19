@@ -12,7 +12,6 @@ class ApiConfig {
   // Auth endpoints
   static const String register = '$baseUrl/auth/register';
   static const String login = '$baseUrl/auth/login';
-  static const String forgotPassword = '$baseUrl/auth/forgot-password';
   static const String me = '$baseUrl/auth/me';
   static const String updateProfile = '$baseUrl/auth/update-profile';
 
@@ -66,3 +65,4 @@ class ApiConfig {
   static const String registerCustomerToken =
       '$baseUrl/notifications/register-customer-token';
 }
+

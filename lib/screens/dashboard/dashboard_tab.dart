@@ -86,8 +86,7 @@ class _DashboardTabState extends State<DashboardTab> {
       automaticallyImplyLeading: !isDesktop,
       title: Text(
         'Dashboard',
-        style: theme.textTheme.headlineSmall
-            ?.copyWith(fontWeight: FontWeight.bold),
+        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
       ),
       actions: [
         Consumer<DashboardProvider>(
@@ -141,8 +140,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   '₹${provider.todayEarnings.toStringAsFixed(0)}',
                                   Icons.account_balance_wallet_rounded,
                                   theme.primaryColor,
-                                  theme,
-                                  subtitle: '+12% Today')),
+                                  theme, subtitle: '+12% Today')),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
@@ -150,9 +148,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   '${provider.todayOrders}',
                                   Icons.receipt_long_rounded,
                                   theme.primaryColor,
-                                  theme,
-                                  subtitle: '8 In Progress',
-                                  subtitleColor: AppColors.warning)),
+                                  theme, subtitle: '8 In Progress', subtitleColor: AppColors.warning)),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                               child: _statCard(
@@ -160,9 +156,7 @@ class _DashboardTabState extends State<DashboardTab> {
                                   '₹${provider.todayAvgOrderValue.toStringAsFixed(0)}',
                                   Icons.analytics_rounded,
                                   theme.primaryColor,
-                                  theme,
-                                  subtitle: 'Stable',
-                                  subtitleColor: AppColors.textMuted)),
+                                  theme, subtitle: 'Stable', subtitleColor: AppColors.textMuted)),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -172,11 +166,8 @@ class _DashboardTabState extends State<DashboardTab> {
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.analytics_rounded),
                           label: const Text('View Full Sales Analytics'),
-                          onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      const SalesAnalyticsScreen())),
+                          onPressed: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const SalesAnalyticsScreen())),
                         ),
                       ),
                     ],
@@ -214,13 +205,15 @@ class _DashboardTabState extends State<DashboardTab> {
                       '₹${provider.todayEarnings.toStringAsFixed(0)}',
                       Icons.account_balance_wallet_rounded,
                       theme.primaryColor,
-                      theme,
-                      subtitle: '+12%')),
+                      theme, subtitle: '+12%')),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                  child: _statCard('Orders', '${provider.todayOrders}',
-                      Icons.receipt_long_rounded, theme.primaryColor, theme,
-                      subtitle: '8 Pending', subtitleColor: AppColors.warning)),
+                  child: _statCard(
+                      'Orders',
+                      '${provider.todayOrders}',
+                      Icons.receipt_long_rounded,
+                      theme.primaryColor,
+                      theme, subtitle: '8 Pending', subtitleColor: AppColors.warning)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -237,10 +230,8 @@ class _DashboardTabState extends State<DashboardTab> {
             child: ElevatedButton.icon(
               icon: const Icon(Icons.analytics_rounded),
               label: const Text('View Full Sales Analytics'),
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const SalesAnalyticsScreen())),
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SalesAnalyticsScreen())),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -255,6 +246,8 @@ class _DashboardTabState extends State<DashboardTab> {
       ),
     );
   }
+
+
 
   Widget _buildHistoryPanel(
       BuildContext context, DashboardProvider provider, ThemeData theme) {
@@ -271,8 +264,7 @@ class _DashboardTabState extends State<DashboardTab> {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
-                Icon(Icons.history_rounded,
-                    color: theme.primaryColor, size: 20),
+                Icon(Icons.history_rounded, color: theme.primaryColor, size: 20),
                 const SizedBox(width: AppSpacing.sm),
                 Text('Recent Orders',
                     style: theme.textTheme.titleMedium
@@ -318,8 +310,7 @@ class _DashboardTabState extends State<DashboardTab> {
               return ListView.separated(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 itemCount: prov.orderHistory.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: AppSpacing.xs),
+                separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
                 itemBuilder: (_, i) {
                   final order = prov.orderHistory[i];
                   return _compactHistoryCard(context, order, theme);
@@ -334,13 +325,11 @@ class _DashboardTabState extends State<DashboardTab> {
 
   Widget _sectionLabel(String label, ThemeData theme) => Text(
         label,
-        style:
-            theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
       );
 
   Widget _statCard(
-      String label, String value, IconData icon, Color color, ThemeData theme,
-      {String? subtitle, Color? subtitleColor}) {
+      String label, String value, IconData icon, Color color, ThemeData theme, {String? subtitle, Color? subtitleColor}) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -365,8 +354,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 ),
               ),
               const Spacer(),
-              Icon(Icons.arrow_outward_rounded,
-                  size: 16, color: theme.iconTheme.color?.withOpacity(0.3)),
+              Icon(Icons.arrow_outward_rounded, size: 16, color: theme.iconTheme.color?.withOpacity(0.3)),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -376,10 +364,8 @@ class _DashboardTabState extends State<DashboardTab> {
             children: [
               Text(
                 value,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.textTheme.bodyLarge?.color,
-                    letterSpacing: -1),
+                style: theme.textTheme.headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w800, color: theme.textTheme.bodyLarge?.color, letterSpacing: -1),
               ),
               if (subtitle != null) ...[
                 const SizedBox(width: AppSpacing.sm),
@@ -398,12 +384,8 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  Widget _compactHistoryCard(
-      BuildContext context, Order order, ThemeData theme) {
+  Widget _compactHistoryCard(BuildContext context, Order order, ThemeData theme) {
     final df = DateFormat('dd MMM • hh:mm a');
-    final locationLabel = order.businessType == 'food_truck'
-        ? 'Pickup #${order.orderPickupNumber ?? '--'}'
-        : 'Table ${order.tableNumber}';
     return InkWell(
       onTap: () => Navigator.push(
           context,
@@ -425,8 +407,7 @@ class _DashboardTabState extends State<DashboardTab> {
                 color: theme.primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child:
-                  Icon(Icons.receipt_long, size: 16, color: theme.primaryColor),
+              child: Icon(Icons.receipt_long, size: 16, color: theme.primaryColor),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -440,10 +421,9 @@ class _DashboardTabState extends State<DashboardTab> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '$locationLabel • ${df.format(DateTime.parse(order.placedAt!))}',
+                    'Table ${order.tableNumber} • ${df.format(DateTime.parse(order.placedAt!))}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
                   ),
                 ],
               ),
